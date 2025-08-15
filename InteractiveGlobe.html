@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>David Rumsey Center Map Display</title>
+    <title>DRMC 4x4 Interactive Display</title>
     <meta
       name="viewport"
       content="initial-scale=1,maximum-scale=1,user-scalable=no"
@@ -23,10 +23,58 @@
         bottom: 0;
         width: 100%;
       }
+      /* transparency slider styles below */
+      .map-overlay {
+        font: bold 18px/20px "Baskerville", Arial, Helvetica, sans-serif;
+        position: absolute;
+        width: 25%;
+        top: 0;
+        left: 0;
+        padding: 10px;
+      }
+
+      .map-overlay .map-overlay-inner {
+        background-color: #b0c4de;
+        opacity: 0.7;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        border-radius: 3px;
+        padding: 10px;
+        margin-bottom: 10px;
+      }
+
+      .map-overlay label {
+        display: block;
+        margin: 0 0 10px;
+      }
+
+      .map-overlay input {
+        background-color: transparent;
+        display: inline-block;
+        width: 100%;
+        position: relative;
+        margin: 0;
+        cursor: ew-resize;
+      }
     </style>
   </head>
+
   <body>
     <div id="map"></div>
+    <!-- Add a container for the transparency slider to the map. -->
+    <div class="map-overlay top">
+      <div class="map-overlay-inner">
+        <label>Layer opacity: <span id="slider-value">100%</span></label>
+        <input
+          id="slider"
+          type="range"
+          min="0"
+          max="100"
+          step="0"
+          value="100"
+        />
+      </div>
+    </div>
+
     <script>
       // TO MAKE THE MAP APPEAR YOU MUST
       // ADD YOUR ACCESS TOKEN FROM
@@ -35,7 +83,7 @@
         "pk.eyJ1IjoiZWN0MTIzIiwiYSI6ImNtZHRmMHNlMTEzZzgybXEzdzlqcXRiaWwifQ.L5BATSTdpGnoaZCaUfm20A";
       const map = new mapboxgl.Map({
         container: "map",
-        style: "mapbox://styles/mapbox/streets-v9",
+        style: "mapbox://styles/mapbox/outdoors-v12",
         projection: "globe", // Display the map as a globe, since satellite-v9 defaults to Mercator
         zoom: 1,
         center: [30, 15],
@@ -51,7 +99,7 @@
       // The following values can be changed to control rotation speed:
 
       // At low zooms, complete a revolution every two minutes.
-      const secondsPerRevolution = 250;
+      const secondsPerRevolution = 150;
       // Above zoom level 5, do not rotate.
       const maxSpinZoom = 5;
       // Rotate at intermediate speeds between zoom levels 3 and 5.
