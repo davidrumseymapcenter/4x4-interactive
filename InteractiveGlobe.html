@@ -130,6 +130,22 @@
           type: "raster",
         });
       });
+      
+      //attempt to load in paris map tiles
+      map.on("load", () => {
+        map.addSource("Paris Photos", {
+          type: "raster",
+          tiles: [
+            "https://console.mapbox.com/studio/tilesets/jessiekong.cmg8jy6vv144y1rny5nvdkdsz-0lib2", // Replace with your own tile URL
+          ],
+          tileSize: 256,
+        });
+        map.addLayer({
+          id: "historical-overlay2",
+          source: "Paris",
+          type: "raster",
+        });
+      });
 
       // Add variables for the slider and its status
       const slider = document.getElementById("slider");
