@@ -134,7 +134,7 @@
       //attempt to load in paris map tiles
       map.on("load", () => {
         map.addSource("Paris Photos", {
-          type: "raster",
+          type: "vector",
           tiles: [
             "https://console.mapbox.com/studio/tilesets/jessiekong.cmg8jy6vv144y1rny5nvdkdsz-0lib2", // Replace with your own tile URL
           ],
@@ -143,7 +143,7 @@
         map.addLayer({
           id: "historical-overlay2",
           source: "Paris",
-          type: "raster",
+          type: "vector",
         });
       });
 
