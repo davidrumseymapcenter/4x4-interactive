@@ -132,20 +132,24 @@
       });
       
       //attempt to load in paris map tiles
-      map.on("load", () => {
-        map.addSource("Paris Photos", {
-          type: "vector",
-          tiles: [
-            "https://api.mapbox.com/v4/{jessiekong.cmg8jy6vv144y1rny5nvdkdsz-0lib2}/{10}/{x}/{y}.{.mvt}", // Replace with your own tile URL
-          ],
-          tileSize: 256,
+        map.on("load", () => {
+          map.addSource("paris-photos", {
+            type: "vector",
+            url: "mapbox://jessiekong.cmg8jy6vv144y1rny5nvdkdsz" // your tileset ID
         });
-        map.addLayer({
-          id: "historical-overlay2",
-          source: "Paris",
-          type: "vector",
-        });
+          
+      map.addLayer({
+        id: "historical-overlay2",
+        type: "fill", // or "line"/"circle" depending on geometry
+        source: "paris-photos",
+        "source-layer": "Test", // VERY IMPORTANT
+        paint: {
+          "fill-color": "#088",
+        "fill-opacity": 0.5
+        }
       });
+    });
+  
 
       // Add variables for the slider and its status
       const slider = document.getElementById("slider");
