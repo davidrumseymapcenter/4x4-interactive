@@ -133,24 +133,22 @@
       
       //attempt to load in paris map tiles
 map.on("load", () => {
-  // Add vector source from your tileset
   map.addSource("paris-photos", {
     type: "vector",
-    url: "mapbox://jessiekong.cmg8jy6vv144y1rny5nvdkdsz"
+    tiles: [
+      "https://api.mapbox.com/v4/jessiekong.cmg8jy6vv144y1rny5nvdkdsz-0lib2/{z}/{x}/{y}.mvt?access_token=YOUR_ACCESS_TOKEN"
+    ],
+    tileSize: 512
   });
 
-  // Add a circle layer for point data
   map.addLayer({
-    id: "historical-overlay3",
-    type: "circle",
+    id: "historical-overlay2",
+    type: "circle",  // points need "circle", not "vector"
     source: "paris-photos",
-    "source-layer": "Test",   // matches your Studio tileset layer
+    "source-layer": "Test", // replace with actual layer name from Studio
     paint: {
-      "circle-radius": 10,
-      "circle-color": "#FF0000"
-      "circle-stroke-width": 2,
-      "circle-stroke-color": "#000000"
-
+      "circle-radius": 5,
+      "circle-color": "#ff0000"
     }
   });
 });
