@@ -133,25 +133,34 @@
       
       //attempt to load in paris map tiles
 map.on("load", () => {
-  map.addSource("paris-photos", {
-    type: "vector",
-    tiles: [
-      "https://api.mapbox.com/v4/jessiekong.cmg8jy6vv144y1rny5nvdkdsz-0lib2/{z}/{x}/{y}.mvt?access_token=pk.eyJ1IjoiZWN0MTIzIiwiYSI6ImNtZHRmMHNlMTEzZzgybXEzdzlqcXRiaWwifQ.L5BATSTdpGnoaZCaUfm20A"
-    ],
-    tileSize: 512
-  });
+  try {
+    map.addSource("paris-photos", {
+      type: "vector",
+      tiles: [
+        "https://api.mapbox.com/v4/jessiekong.cmg8jy6vv144y1rny5nvdkdsz-0lib2/{z}/{x}/{y}.mvt?access_token=pk.eyJ1IjoiZWN0MTIzIiwiYSI6ImNtZHRmMHNlMTEzZzgybXEzdzlqcXRiaWwifQ.L5BATSTdpGnoaZCaUfm20A"
+      ],
+      tileSize: 512
+    });
 
-  map.addLayer({
-    id: "historical-overlay3",
-    type: "circle",  // points need "circle", not "vector"
-    source: "paris-photos",
-    "source-layer": "Test", // replace with actual layer name from Studio
-    paint: {
-      "circle-radius": 5,
-      "circle-color": "#ff0000"
-    }
-  });
+    // --- IMPORTANT ---
+    // Replace 'Test' with the **exact layer name** from your Mapbox Studio tileset
+    map.addLayer({
+      id: "paris-photos-layer",
+      type: "circle", // vector points require 'circle'
+      source: "paris-photos",
+      "source-layer": "Test", // <-- CHANGE THIS
+      paint: {
+        "circle-radius": 5,
+        "circle-color": "#ff0000"
+      }
+    });
+
+    console.log("Paris vector layer added successfully!");
+  } catch (err) {
+    console.error("Paris vector layer failed to load:", err);
+  }
 });
+
   
 
       // Add variables for the slider and its status
