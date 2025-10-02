@@ -132,23 +132,25 @@
       });
       
       //attempt to load in paris map tiles
-        map.on("load", () => {
-          map.addSource("paris-photos", {
-            type: "vector",
-            url: "mapbox://jessiekong.cmg8jy6vv144y1rny5nvdkdsz" // your tileset ID
-        });
-          
-      map.addLayer({
-        id: "historical-overlay2",
-        type: "fill", // or "line"/"circle" depending on geometry
-        source: "paris-photos",
-        "source-layer": "Test", // VERY IMPORTANT
-        paint: {
-          "fill-color": "#088",
-        "fill-opacity": 0.5
-        }
-      });
-    });
+map.on("load", () => {
+  // Add vector source from your tileset
+  map.addSource("paris-photos", {
+    type: "vector",
+    url: "mapbox://jessiekong.cmg8jy6vv144y1rny5nvdkdsz"
+  });
+
+  // Add a circle layer for point data
+  map.addLayer({
+    id: "historical-overlay2",
+    type: "circle",
+    source: "paris-photos",
+    "source-layer": "Test",   // matches your Studio tileset layer
+    paint: {
+      "circle-radius": 10,
+      "circle-color": "#FF0000"
+    }
+  });
+});
   
 
       // Add variables for the slider and its status
