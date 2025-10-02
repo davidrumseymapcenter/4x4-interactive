@@ -136,13 +136,13 @@ map.on("load", () => {
   map.addSource("paris-photos", {
     type: "vector",
     tiles: [
-      "https://api.mapbox.com/v4/jessiekong.cmg8jy6vv144y1rny5nvdkdsz-0lib2/{z}/{x}/{y}.mvt?access_token=YOUR_ACCESS_TOKEN"
+      "https://api.mapbox.com/v4/jessiekong.cmg8jy6vv144y1rny5nvdkdsz-0lib2/{z}/{x}/{y}.mvt?access_token=pk.eyJ1IjoiZWN0MTIzIiwiYSI6ImNtZHRmMHNlMTEzZzgybXEzdzlqcXRiaWwifQ.L5BATSTdpGnoaZCaUfm20A"
     ],
     tileSize: 512
   });
 
   map.addLayer({
-    id: "historical-overlay2",
+    id: "historical-overlay3",
     type: "circle",  // points need "circle", not "vector"
     source: "paris-photos",
     "source-layer": "Test", // replace with actual layer name from Studio
