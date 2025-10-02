@@ -141,13 +141,16 @@ map.on("load", () => {
 
   // Add a circle layer for point data
   map.addLayer({
-    id: "historical-overlay2",
+    id: "historical-overlay3",
     type: "circle",
     source: "paris-photos",
     "source-layer": "Test",   // matches your Studio tileset layer
     paint: {
       "circle-radius": 10,
       "circle-color": "#FF0000"
+      "circle-stroke-width": 2,
+      "circle-stroke-color": "#000000"
+
     }
   });
 });
