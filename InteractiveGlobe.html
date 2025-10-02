@@ -159,6 +159,36 @@ map.on("load", () => {
   } catch (err) {
     console.error("Paris vector layer failed to load:", err);
   }
+ // --- ADD POPUP INTERACTION HERE ---
+  const popup = new mapboxgl.Popup({
+    closeButton: true,
+    closeOnClick: true
+  });
+
+  map.on("click", "paris-photos-layer", (e) => {
+    const feature = e.features[0];
+    if (!feature) return;
+
+    // Customize which properties to show
+    const props = feature.properties;
+    let htmlContent = "<strong>Feature Info:</strong><br>";
+    for (const key in props) {
+      htmlContent += `<strong>${key}:</strong> ${props[key]}<br>`;
+    }
+
+    popup
+      .setLngLat(e.lngLat)
+      .setHTML(htmlContent)
+      .addTo(map);
+  });
+
+  // Optional: change cursor on hover
+  map.on("mouseenter", "paris-photos-layer", () => {
+    map.getCanvas().style.cursor = "pointer";
+  });
+  map.on("mouseleave", "paris-photos-layer", () => {
+    map.getCanvas().style.cursor = "";
+  });
 });
 
   
