@@ -133,56 +133,60 @@
       
       //attempt to load in paris map tiles
 map.on("load", () => {
-  try {
-    map.addSource("paris-photos", {
-      type: "vector",
-      tiles: [
-        "https://api.mapbox.com/v4/jessiekong.cmg8jy6vv144y1rny5nvdkdsz-0lib2/{z}/{x}/{y}.mvt?access_token=pk.eyJ1IjoiZWN0MTIzIiwiYSI6ImNtZHRmMHNlMTEzZzgybXEzdzlqcXRiaWwifQ.L5BATSTdpGnoaZCaUfm20A"
-      ],
-      tileSize: 512
-    });
-
-    // --- IMPORTANT ---
-    // Replace 'Test' with the **exact layer name** from your Mapbox Studio tileset
-    map.addLayer({
-      id: "paris-photos-layer",
-      type: "circle", // vector points require 'circle'
-      source: "paris-photos",
-      "source-layer": "Test", // <-- CHANGE THIS
-      paint: {
-        "circle-radius": 5,
-        "circle-color": "#ff0000"
-      }
-    });
-
-    console.log("Paris vector layer added successfully!");
-  } catch (err) {
-    console.error("Paris vector layer failed to load:", err);
-  }
- // --- ADD POPUP INTERACTION HERE ---
-  const popup = new mapboxgl.Popup({
-    closeButton: true,
-    closeOnClick: true
+  // --- Paris points layer ---
+  map.addSource("paris-photos", {
+    type: "vector",
+    tiles: [
+      "https://api.mapbox.com/v4/jessiekong.cmg8jy6vv144y1rny5nvdkdsz-0lib2/{z}/{x}/{y}.mvt?access_token=pk.eyJ1IjoiZWN0MTIzIiwiYSI6ImNtZHRmMHNlMTEzZzgybXEzdzlqcXRiaWwifQ.L5BATSTdpGnoaZCaUfm20A"
+    ],
+    tileSize: 512
   });
+
+  // Circle layer for the points
+  map.addLayer({
+    id: "paris-photos-layer",
+    type: "circle",
+    source: "paris-photos",
+    "source-layer": "Test", // replace with your actual layer name
+    paint: {
+      "circle-radius": 5,
+      "circle-color": "#ff0000"
+    }
+  });
+
+  // Symbol layer to show the name
+  map.addLayer({
+    id: "paris-photos-labels",
+    type: "symbol",
+    source: "paris-photos",
+    "source-layer": "Test", // same as above
+    layout: {
+      "text-field": ["get", "Name"], // assumes your feature has a "name" property
+      "text-size": 12,
+      "text-offset": [0, 1.2], // moves text above the circle
+      "text-anchor": "top"
+    },
+    paint: {
+      "text-color": "#000000"
+    }
+  });
+
+  // --- POPUP INTERACTION ---
+  const popup = new mapboxgl.Popup({ closeButton: true, closeOnClick: true });
 
   map.on("click", "paris-photos-layer", (e) => {
     const feature = e.features[0];
     if (!feature) return;
 
-    // Customize which properties to show
     const props = feature.properties;
-    let htmlContent = "<strong>Feature Info:</strong><br>";
+    let htmlContent = `<strong>${props.name}</strong><br>`;
     for (const key in props) {
-      htmlContent += `<strong>${key}:</strong> ${props[key]}<br>`;
+      if (key !== "name") htmlContent += `<strong>${key}:</strong> ${props[key]}<br>`;
     }
 
-    popup
-      .setLngLat(e.lngLat)
-      .setHTML(htmlContent)
-      .addTo(map);
+    popup.setLngLat(e.lngLat).setHTML(htmlContent).addTo(map);
   });
 
-  // Optional: change cursor on hover
   map.on("mouseenter", "paris-photos-layer", () => {
     map.getCanvas().style.cursor = "pointer";
   });
@@ -190,7 +194,6 @@ map.on("load", () => {
     map.getCanvas().style.cursor = "";
   });
 });
-
   
 
       // Add variables for the slider and its status
