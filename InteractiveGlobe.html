@@ -18,10 +18,8 @@
         padding: 0;
       }
       #map {
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        width: 100%;
+        width: 100vw;
+        height: 100vh;
       }
       /* transparency slider styles below */
       .map-overlay {
@@ -55,10 +53,29 @@
         margin: 0;
         cursor: ew-resize;
       }
+
+      .reset-button {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: white;
+        border: none;
+        border-radius: 4px;
+        padding: 6px 10px;
+        font-size: 14px;
+        cursor: pointer;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+        z-index: 1;
+      }
+
+      .reset-button:hover {
+        background: #f0f0f0;
+      }
     </style>
   </head>
 
   <body>
+    <button id="reset" class="reset-button">Reset</button>
     <div id="map"></div>
     <!-- Add a container for the transparency slider to the map. -->
     <div class="map-overlay top">
@@ -81,12 +98,25 @@
       // https://account.mapbox.com
       mapboxgl.accessToken =
         "pk.eyJ1IjoiZWN0MTIzIiwiYSI6ImNtZHRmMHNlMTEzZzgybXEzdzlqcXRiaWwifQ.L5BATSTdpGnoaZCaUfm20A";
+
+      const initialState = {
+        center: [30, 15], // Example: San Francisco
+        zoom: 3,
+        bearing: 0,
+        pitch: 0,
+      };
+
       const map = new mapboxgl.Map({
         container: "map",
-        style: "mapbox://styles/mapbox/outdoors-v12",
-        projection: "globe", // Display the map as a globe, since satellite-v9 defaults to Mercator
-        zoom: 3,
-        center: [30, 15],
+        style: "mapbox://styles/mapbox/streets-v12",
+        center: initialState.center,
+        zoom: initialState.zoom,
+        bearing: initialState.bearing,
+        pitch: initialState.pitch,
+      });
+
+      document.getElementById("reset").addEventListener("click", () => {
+        location.reload(); // reloads the page and restarts everything
       });
 
       map.addControl(new mapboxgl.NavigationControl());
@@ -94,6 +124,7 @@
 
       map.on("style.load", () => {
         map.setFog({}); // Set the default atmosphere style
+        map.setProjection("globe"); // Set the map projection to globe
       });
 
       // Add georeferenced overlay of
