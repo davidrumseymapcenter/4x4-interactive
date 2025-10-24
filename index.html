@@ -75,6 +75,7 @@
   </head>
 
   <body>
+
     <button id="reset" class="reset-button">Reset</button>
     <div id="map"></div>
     <!-- Add a container for the transparency slider to the map. -->
@@ -125,6 +126,7 @@
       map.on("style.load", () => {
         map.setFog({}); // Set the default atmosphere style
         map.setProjection("globe"); // Set the map projection to globe
+
       });
 
       // Add georeferenced overlay of
