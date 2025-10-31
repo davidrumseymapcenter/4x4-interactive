@@ -98,15 +98,14 @@
     <button id="flytoSF">Fly to San Francisco</button>
 
     <script>
-      // TO MAKE THE MAP APPEAR YOU MUST
-      // ADD YOUR ACCESS TOKEN FROM
-      // https://account.mapbox.com
+      // Base Map Initialization
+      // ADD YOUR ACCESS TOKEN FROM https://account.mapbox.com
       mapboxgl.accessToken =
         "pk.eyJ1IjoiZWN0MTIzIiwiYSI6ImNtZHRmMHNlMTEzZzgybXEzdzlqcXRiaWwifQ.L5BATSTdpGnoaZCaUfm20A";
       const map = new mapboxgl.Map({
         container: "map",
         style: "mapbox://styles/mapbox/outdoors-v12",
-        projection: "globe", // Display the map as a globe, since satellite-v9 defaults to Mercator
+        projection: "globe",
         zoom: 2,
         center: [30, 15],
       });
@@ -114,12 +113,20 @@
       map.addControl(new mapboxgl.NavigationControl());
       map.scrollZoom.enable();
 
+      // Set the default atmosphere style
       map.on("style.load", () => {
-        map.setFog({}); // Set the default atmosphere style
+        map.setFog({});
+        map.addSource("mapbox-dem", {
+          type: "raster-dem",
+          url: "mapbox://mapbox.terrain-rgb",
+        });
+        map.setTerrain({
+          source: "mapbox-dem",
+          exaggeration: 5,
+        });
       });
 
-      // Add georeferenced overlay of
-      // U.S. Coast Survey City of SF Map from 1853
+      // Add georeferenced overlay of U.S. Coast Survey City of SF Map from 1853
       map.on("load", () => {
         // This is an event listener that waits for the map to load before adding the source and layer.
         map.addSource("USCoastSurveySF1853", {
@@ -174,7 +181,7 @@
       const slider = document.getElementById("slider");
       const sliderValue = document.getElementById("slider-value");
 
-      // Add an event listener for the slider.
+      // Add an event listener for the transparency slider.
       slider.addEventListener("input", (e) => {
         // Adjust the layers opacity. layer here is arbitrary - this could
         // be another layer name found in your style or a custom layer
@@ -240,13 +247,13 @@
       let isAtStart = true;
       // Define the two points to fly to
       const SFcenter = {
-        center: [8.11862, 46.58842],
-        zoom: 12.5,
+        center: [-122.40449533148507, 37.772928641760714],
+        zoom: 14,
         bearing: 130,
         pitch: 75,
       };
 
-      document.getElementById("fly").addEventListener("click", () => {
+      document.getElementById("flytoSF").addEventListener("click", () => {
         // depending on whether we're currently at point a or b,
         // aim for point a or b
         const target = isAtStart ? SFcenter : spinGlobe();
