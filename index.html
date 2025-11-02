@@ -18,14 +18,12 @@
         padding: 0;
       }
       #map {
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        width: 100%;
+        width: 100vw;
+        height: 100vh;
       }
       /* transparency slider styles below */
       .map-overlay {
-        font: 13px/15px sans-serif, "Baskerville", Arial, Helvetica;
+        font: bold 13px/15px "Baskerville", Arial, Helvetica, sans-serif;
         position: absolute;
         width: 20%;
         top: 15px;
@@ -55,6 +53,22 @@
         margin: 0;
         cursor: ew-resize;
       }
+      .reset-button {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: e0e0e0;
+        border: none;
+        border-radius: 4px;
+        padding: 6px 10px;
+        font-size: 14px;
+        cursor: pointer;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+        z-index: 1;
+      }
+      .reset-button:hover {
+        background: #e0e0e0;
+      }
     </style>
   </head>
 
@@ -78,7 +92,8 @@
         background: #e0e0e0;
       }
     </style>
-
+    <!-- Add the reset button-->
+    <button id="reset" class="reset-button">Reset</button>
     <div id="map"></div>
     <!-- Add a container for the transparency slider to the map. -->
     <div class="map-overlay top">
@@ -95,25 +110,38 @@
       </div>
     </div>
     <!-- Add the button for flying to SF-->
-    <button id="flytoSF">Fly to San Francisco</button>
+    <button id="flytoSF">Fly to 1869 San Francisco</button>
 
     <script>
       // Base Map Initialization
       // ADD YOUR ACCESS TOKEN FROM https://account.mapbox.com
       mapboxgl.accessToken =
         "pk.eyJ1IjoiZWN0MTIzIiwiYSI6ImNtZHRmMHNlMTEzZzgybXEzdzlqcXRiaWwifQ.L5BATSTdpGnoaZCaUfm20A";
+
+      const initialState = {
+        center: [30, 15], // Example: San Francisco
+        zoom: 3,
+        bearing: 0,
+        pitch: 0,
+      };
+
       const map = new mapboxgl.Map({
         container: "map",
-        style: "mapbox://styles/mapbox/outdoors-v12",
-        projection: "globe",
-        zoom: 2,
-        center: [30, 15],
+        style: "mapbox://styles/mapbox/streets-v12",
+        center: initialState.center,
+        zoom: initialState.zoom,
+        bearing: initialState.bearing,
+        pitch: initialState.pitch,
+      });
+
+      document.getElementById("reset").addEventListener("click", () => {
+        location.reload(); // reloads the page and restarts everything
       });
 
       map.addControl(new mapboxgl.NavigationControl());
       map.scrollZoom.enable();
 
-      // Set the default atmosphere style
+      // Set the atmosphere style and terrain exaggeration
       map.on("style.load", () => {
         map.setFog({});
         map.addSource("mapbox-dem", {
@@ -132,7 +160,7 @@
         map.addSource("USCoastSurveySF1853", {
           type: "raster",
           tiles: [
-            "https://allmaps.xyz/images/cbff2fe43856f02b/{z}/{x}/{y}@2x.png", // Replace with your own tile URL
+            "https://allmaps.xyz/images/cbff2fe43856f02b/{z}/{x}/{y}@2x.png",
           ],
           tileSize: 256,
         });
@@ -149,7 +177,7 @@
         map.addSource("USCoastSurveySF1869", {
           type: "raster",
           tiles: [
-            "https://allmaps.xyz/images/39bb99643fb5a26d/{z}/{x}/{y}@2x.png", // Replace with your own tile URL
+            "https://allmaps.xyz/images/39bb99643fb5a26d/{z}/{x}/{y}@2x.png",
           ],
           tileSize: 256,
         });
@@ -166,7 +194,7 @@
         map.addSource("USGSSurveyYosemite1883", {
           type: "raster",
           tiles: [
-            "https://allmaps.xyz/manifests/6a784e8edcc336e8/{z}/{x}/{y}@2x.png", // Replace with your own tile URL
+            "https://allmaps.xyz/manifests/6a784e8edcc336e8/{z}/{x}/{y}@2x.png",
           ],
           tileSize: 256,
         });
@@ -247,18 +275,14 @@
       let isAtStart = true;
       // Define the two points to fly to
       const SFcenter = {
-        center: [-122.40449533148507, 37.772928641760714],
+        center: [-122.39194543787394, 37.76819361924776],
         zoom: 14,
         bearing: 130,
         pitch: 75,
       };
-
       document.getElementById("flytoSF").addEventListener("click", () => {
-        // depending on whether we're currently at point a or b,
-        // aim for point a or b
         const target = isAtStart ? SFcenter : spinGlobe();
         isAtStart = !isAtStart;
-
         map.flyTo({
           ...target, // Fly to the selected target
           duration: 12000, // Animate over 12 seconds
