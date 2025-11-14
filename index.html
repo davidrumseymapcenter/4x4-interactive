@@ -134,11 +134,6 @@
         pitch: initialState.pitch,
       });
 
-      const popup = new mapboxgl.Popup({ closeOnClick: false })
-        .setLngLat([-122.16753571848874, 37.42701863544274]) // pop up botton showing DRMC is
-        .setHTML("<h1>This is Us!</h1>")
-        .addTo(map);
-
       document.getElementById("reset").addEventListener("click", () => {
         location.reload(); // reloads the page and restarts everything
       });
