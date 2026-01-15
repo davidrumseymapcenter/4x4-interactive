@@ -8,10 +8,10 @@
       content="initial-scale=1,maximum-scale=1,user-scalable=no"
     />
     <link
-      href="https://api.mapbox.com/mapbox-gl-js/v3.14.0/mapbox-gl.css"
+      href="https://api.mapbox.com/mapbox-gl-js/v3.17.0-beta.1/mapbox-gl.css"
       rel="stylesheet"
     />
-    <script src="https://api.mapbox.com/mapbox-gl-js/v3.14.0/mapbox-gl.js"></script>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.17.0-beta.1/mapbox-gl.js"></script>
     <style>
       body {
         margin: 0;
@@ -145,6 +145,7 @@
 
       map.addControl(new mapboxgl.NavigationControl());
       map.scrollZoom.enable();
+      map.addControl(new mapboxgl.MapboxStyleSwitcherControl());
 
       // Set the atmosphere style and terrain exaggeration
       map.on("style.load", () => {
