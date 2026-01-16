@@ -146,6 +146,7 @@
       map.addControl(new mapboxgl.NavigationControl());
       map.scrollZoom.enable();
       map.addControl(new mapboxgl.MapboxStyleSwitcherControl());
+      map.addControl(new mapboxgl.FullscreenControl());
 
       // Set the atmosphere style and terrain exaggeration
       map.on("style.load", () => {
