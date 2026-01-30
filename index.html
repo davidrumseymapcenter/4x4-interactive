@@ -17,64 +17,61 @@
         margin: 0;
         padding: 0;
       }
+      /* map styles below */
       #map {
         width: 100vw;
         height: 100vh;
       }
+      .mapboxgl-canvas{
+        cursor: url('cursor.png'), pointer;
+      }
       /* transparency slider styles below */
       .map-overlay {
-        font: bold 13px/15px "Baskerville", Arial, Helvetica, sans-serif;
         position: absolute;
         width: 20%;
         top: 15px;
         right: 40px;
         padding: 5px;
+        font-size: 14px;
+        cursor: url('cursor.png'), pointer;
       }
       .map-overlay .map-overlay-inner {
-        background-color: #e0e0e0;
+        background-color: #faf8f8;
         color: #0d0505;
         opacity: 1;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
         border-radius: 3px;
         padding: 10px;
         margin-bottom: 10px;
-      }
 
-      .map-overlay label {
-        display: block;
-        margin: 0 0 10px;
       }
-
       .map-overlay input {
         background-color: transparent;
         display: inline-block;
         width: 100%;
         position: relative;
         margin: 0;
-        cursor: ew-resize;
+        cursor: grab;
       }
+      /* reset button styles below */
       .reset-button {
         position: absolute;
         top: 10px;
         left: 10px;
-        background: e0e0e0;
+        background: #fbf8f8;
         border: none;
         border-radius: 4px;
         padding: 6px 10px;
         font-size: 14px;
-        cursor: pointer;
         box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
         z-index: 1;
+        cursor: url('cursor.png');
       }
       .reset-button:hover {
-        background: #e0e0e0;
+        background: #fbf8f8;
+        cursor: url('cursor.png'), pointer;
       }
-    </style>
-  </head>
-
-  <body>
-    <style>
-      /* Add a button to fly to SF */
+      /* Add a button to fly to SF styles below */
       #flytoSF {
         display: block;
         position: absolute;
@@ -86,19 +83,26 @@
         padding: 5px;
         border: none;
         border-radius: 3px;
-        font-size: 12px;
+        font-size: 14px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
         text-align: center;
         color: #0d0505;
-        background: #e0e0e0;
+        background: #fbf8f8;
+      }
+      #flytoSF:hover {
+        background: #fbf8f8;
+        cursor: url('cursor.png'), pointer;
       }
     </style>
+  </head>
+
     <!-- Add the reset button-->
     <button id="reset" class="reset-button">Reset</button>
     <div id="map"></div>
     <!-- Add a container for the transparency slider to the map. -->
     <div class="map-overlay top">
       <div class="map-overlay-inner">
-        <label>Layer opacity: <span id="slider-value">100%</span></label>
+        <label>Layer Opacity: <span id="slider-value">100%</span></label>
         <input
           id="slider"
           type="range"
@@ -110,21 +114,19 @@
       </div>
     </div>
     <!-- Add the button for flying to SF-->
-    <button id="flytoSF">Fly to 1853 San Francisco</button>
+    <button id="flytoSF">Fly to 1869 San Francisco</button>
 
     <script>
       // Base Map Initialization
       // ADD YOUR ACCESS TOKEN FROM https://account.mapbox.com
       mapboxgl.accessToken =
         "pk.eyJ1IjoiZWN0MTIzIiwiYSI6ImNtZHRmMHNlMTEzZzgybXEzdzlqcXRiaWwifQ.L5BATSTdpGnoaZCaUfm20A";
-
       const initialState = {
-        center: [30, 15], // Example: San Francisco
+        center: [30, 15], 
         zoom: 3,
         bearing: 0,
         pitch: 0,
       };
-
       const map = new mapboxgl.Map({
         container: "map",
         style: "mapbox://styles/mapbox/streets-v12",
@@ -133,20 +135,23 @@
         bearing: initialState.bearing,
         pitch: initialState.pitch,
       });
-
+      // Add a popup to indicate DRMC location
       const popup = new mapboxgl.Popup({ closeOnClick: false })
         .setLngLat([-122.16753571848874, 37.42701863544274]) // pop up botton showing DRMC is
-        .setHTML("<h1>You are Here!</h1>")
+        .setHTML("<h1>We are Here</h1>")
         .addTo(map);
-
+      // Activate Reset Button
       document.getElementById("reset").addEventListener("click", () => {
-        location.reload(); // reloads the page and restarts everything
+        location.reload(); 
       });
-
+      // Add side bar navigation control
       map.addControl(new mapboxgl.NavigationControl());
-      map.scrollZoom.enable();
-      map.addControl(new mapboxgl.MapboxStyleSwitcherControl());
       map.addControl(new mapboxgl.FullscreenControl());
+      map.addControl(new mapboxgl.GeolocateControl());
+        
+      // Add Scale bar at the bottom left
+      map.addControl(new mapboxgl.ScaleControl());
+
 
       // Set the atmosphere style and terrain exaggeration
       map.on("style.load", () => {
@@ -163,7 +168,6 @@
 
       // Add georeferenced overlay of U.S. Coast Survey City of SF Map from 1853
       map.on("load", () => {
-        // This is an event listener that waits for the map to load before adding the source and layer.
         map.addSource("USCoastSurveySF1853", {
           type: "raster",
           tiles: [
@@ -178,9 +182,8 @@
         });
       });
 
-      // U.S. Coast Survey City of SF Map from 1853
+      // U.S. Coast Survey City of SF Map from 1869
       map.on("load", () => {
-        // This is an event listener that waits for the map to load before adding the source and layer.
         map.addSource("USCoastSurveySF1853", {
           type: "raster",
           tiles: [
@@ -190,13 +193,12 @@
         });
         map.addLayer({
           id: "historical-overlay",
-          source: "USCoastSurveySF1853",
+          source: "USCoastSurveySF1869",
           type: "raster",
         });
       });
 
-      // Add georeferenced overlay of
-      // USGS Survey of Yosemite from 1883
+      // Add georeferenced overlay of USGS Survey of Yosemite from 1883
       map.on("load", () => {
         map.addSource("USGSSurveyYosemite1883", {
           type: "raster",
@@ -218,9 +220,6 @@
 
       // Add an event listener for the transparency slider.
       slider.addEventListener("input", (e) => {
-        // Adjust the layers opacity. layer here is arbitrary - this could
-        // be another layer name found in your style or a custom layer
-        // added on the fly using `addSource`.
         map.setPaintProperty(
           "historical-overlay",
           "raster-opacity",
@@ -236,51 +235,41 @@
       });
 
       // The following values can be changed to control rotation speed:
-      // At low zooms, complete a revolution every two minutes.
       const secondsPerRevolution = 150;
-      // Above zoom level 5, do not rotate.
       const maxSpinZoom = 5;
-      // Rotate at intermediate speeds between zoom levels 3 and 5.
       const slowSpinZoom = 3;
-
-      let userInteracting = false;
       const spinEnabled = true;
 
+      // Allow for Any Map Interaction
+      let userInteracting = false;
+
+      // Spinning the Globe
       function spinGlobe() {
         const zoom = map.getZoom();
         if (spinEnabled && !userInteracting && zoom < maxSpinZoom) {
           let distancePerSecond = 360 / secondsPerRevolution;
           if (zoom > slowSpinZoom) {
-            // Slow spinning at higher zooms
             const zoomDif = (maxSpinZoom - zoom) / (maxSpinZoom - slowSpinZoom);
             distancePerSecond *= zoomDif;
           }
           const center = map.getCenter();
           center.lng -= distancePerSecond;
-          // Smoothly animate the map over one second.
-          // When this animation is complete, it calls a 'moveend' event.
           map.easeTo({ center, duration: 1000, easing: (n) => n });
         }
       }
-
-      // Pause spinning on interaction
       map.on("mousedown", () => {
         userInteracting = true;
       });
       map.on("dragstart", () => {
         userInteracting = true;
       });
-
-      // When animation is complete, start spinning if there is no ongoing interaction
       map.on("moveend", () => {
         spinGlobe();
       });
-
       spinGlobe();
 
       // Fly to SF Button
       let isAtStart = true;
-      // Define the two points to fly to
       const SFcenter = {
         center: [-122.39194543787394, 37.76819361924776],
         zoom: 14,
@@ -291,10 +280,9 @@
         const target = isAtStart ? SFcenter : spinGlobe();
         isAtStart = !isAtStart;
         map.flyTo({
-          ...target, // Fly to the selected target
-          duration: 12000, // Animate over 12 seconds
-          essential: true, // This animation is considered essential with
-          //respect to prefers-reduced-motion
+          ...target, 
+          duration: 12000, 
+          essential: true, 
         });
       });
     </script>
