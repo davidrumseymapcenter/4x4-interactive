@@ -12,4 +12,4 @@ To build this webmap, here are several general steps involved:
 - Adding Georeferenced historic map overlays
 - Customizing the interactive features on spinning globe
 
-For a more detailed description of how this web map came to be, check out [this documentation](DavidRumseyMapCenter/MapboxInteractiveGlobeProjectDocumentation.md).
+For a more detailed description of how this web map came to be, check out [this documentation](DRMCwebmapDoc/MapboxInteractiveGlobeProjectDocumentation.md).
