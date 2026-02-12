@@ -22,8 +22,8 @@
         width: 100vw;
         height: 100vh;
       }
-      .mapboxgl-canvas{
-        cursor: url('cursor.png'), pointer;
+      .mapboxgl-canvas {
+        cursor: url("cursor.png"), pointer;
       }
       /* transparency slider styles below */
       .map-overlay {
@@ -33,7 +33,7 @@
         right: 40px;
         padding: 5px;
         font-size: 14px;
-        cursor: url('cursor.png'), pointer;
+        cursor: url("cursor.png"), pointer;
       }
       .map-overlay .map-overlay-inner {
         background-color: #faf8f8;
@@ -43,7 +43,6 @@
         border-radius: 3px;
         padding: 10px;
         margin-bottom: 10px;
-
       }
       .map-overlay input {
         background-color: transparent;
@@ -65,11 +64,11 @@
         font-size: 14px;
         box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
         z-index: 1;
-        cursor: url('cursor.png');
+        cursor: url("cursor.png");
       }
       .reset-button:hover {
         background: #fbf8f8;
-        cursor: url('cursor.png'), pointer;
+        cursor: url("cursor.png"), pointer;
       }
       /* Add a button to fly to SF styles below */
       #flytoSF {
@@ -91,10 +90,10 @@
       }
       #flytoSF:hover {
         background: #fbf8f8;
-        cursor: url('cursor.png'), pointer;
+        cursor: url("cursor.png"), pointer;
       }
       /* Add menu side bar*/
-      .rounded-rect{
+      .rounded-rect {
         background: white;
         border-radius: 10px;
         box-shadow: 0 0 50px -25px black;
@@ -129,40 +128,45 @@
         align-items: center;
         font-size: 16px;
       }
-      .sidebar-toggle.right{
-        left:-3.8em;
+      .sidebar-toggle.right {
+        left: -3.8em;
       }
-      .sidebar-toggle:hover{
+      .sidebar-toggle:hover {
         cursor: pointer;
         color: #0aa1cf;
       }
-      .sidebar{
+      .sidebar {
         transition: transform 1.2s;
         z-index: 1;
         width: 300px;
         height: 100%;
       }
-      .right.collapsed{
+      .right.collapsed {
         transform: translateX(295px);
       }
     </style>
   </head>
 
-    <!-- Add the reset button-->
-    <button id="reset" class="reset-button">Reset</button>
+  <body>
     <!-- Add the map container -->
     <div id="map">
       <!-- Add the menu sidebar -->
       <div id="right" class="sidebar flex-center right collapsed">
         <div class="sidebar-content rounded-rect flex-center">
-            Under Construction...
-            <div class="sidebar-toggle rounded-rect right" onclick="toggleSidebar('right')" style="flex-direction: column;">
-              <span>Menu</span>
-              <span>&#x261E;</span>
-            </div>
+          Under Construction...
+          <div
+            class="sidebar-toggle rounded-rect right"
+            onclick="toggleSidebar('right')"
+            style="flex-direction: column"
+          >
+            <span>Menu</span>
+            <span>&#x261E;</span>
+          </div>
         </div>
+      </div>
     </div>
-  </div>
+    <!-- Add the reset button-->
+    <button id="reset" class="reset-button">Reset</button>
     <!-- Add a container for the transparency slider to the map. -->
     <div class="map-overlay top">
       <div class="map-overlay-inner">
@@ -186,7 +190,7 @@
       mapboxgl.accessToken =
         "pk.eyJ1IjoiZWN0MTIzIiwiYSI6ImNtZHRmMHNlMTEzZzgybXEzdzlqcXRiaWwifQ.L5BATSTdpGnoaZCaUfm20A";
       const initialState = {
-        center: [30, 15], 
+        center: [30, 15],
         zoom: 3,
         bearing: 0,
         pitch: 0,
@@ -199,53 +203,54 @@
         bearing: initialState.bearing,
         pitch: initialState.pitch,
       });
-      // Add menu sidebar 
-      function toggleSidebar(id){
+      // Add menu sidebar
+      function toggleSidebar(id) {
         const elem = document.getElementById(id);
-        const collapsed = elem.classList.toggle('collapsed');
-        const padding ={};
+        const collapsed = elem.classList.toggle("collapsed");
+        const padding = {};
         padding[id] = collapsed ? 0 : 300;
         map.easeTo({
           padding: padding,
-          duration: 1000
+          duration: 1000,
         });
       }
-      map.on('load', () => {
-        toggleSidebar('left');
-      });
       // Add a popup to indicate DRMC location
       const popup = new mapboxgl.Popup({ closeOnClick: false })
-        .setLngLat([-122.16753571848874, 37.42701863544274]) // pop up botton showing DRMC is
+        .setLngLat([-122.16753571848874, 37.42701863544274])
         .setHTML("<h1>We are Here</h1>")
         .addTo(map);
       // Activate Reset Button
       document.getElementById("reset").addEventListener("click", () => {
-        location.reload(); 
+        location.reload();
       });
       // Add side bar navigation control
       map.addControl(new mapboxgl.NavigationControl());
       map.addControl(new mapboxgl.FullscreenControl());
       map.addControl(new mapboxgl.GeolocateControl());
-        
+
       // Add Scale bar at the bottom left
       map.addControl(new mapboxgl.ScaleControl());
 
-
       // Set the atmosphere style and terrain exaggeration
       map.on("style.load", () => {
-        map.setFog({});
+        map.setFog({
+          range: [0.8, 20],
+          color: "white",
+          "horizon-blend": 0.2,
+        });
         map.addSource("mapbox-dem", {
           type: "raster-dem",
           url: "mapbox://mapbox.terrain-rgb",
         });
         map.setTerrain({
           source: "mapbox-dem",
-          exaggeration: 5,
+          exaggeration: 2,
         });
       });
 
-      // Add georeferenced overlay of U.S. Coast Survey City of SF Map from 1853
+      // Event listener for Initial state (everything that needs to be loaded before the map is interacted with)
       map.on("load", () => {
+        // Add georeferenced overlay of U.S. Coast Survey City of SF Map from 1853
         map.addSource("USCoastSurveySF1853", {
           type: "raster",
           tiles: [
@@ -258,26 +263,7 @@
           source: "USCoastSurveySF1853",
           type: "raster",
         });
-      });
-
-      // U.S. Coast Survey City of SF Map from 1869
-      map.on("load", () => {
-        map.addSource("USCoastSurveySF1853", {
-          type: "raster",
-          tiles: [
-            "https://allmaps.xyz/images/39bb99643fb5a26d/{z}/{x}/{y}@2x.png",
-          ],
-          tileSize: 256,
-        });
-        map.addLayer({
-          id: "historical-overlay",
-          source: "USCoastSurveySF1869",
-          type: "raster",
-        });
-      });
-
-      // Add georeferenced overlay of USGS Survey of Yosemite from 1883
-      map.on("load", () => {
+        // Add georeferenced overlayer of USGS Survey of 1883 Yosemite
         map.addSource("USGSSurveyYosemite1883", {
           type: "raster",
           tiles: [
@@ -290,6 +276,8 @@
           source: "USGSSurveyYosemite1883",
           type: "raster",
         });
+        //Add the menu sidebar to toggle
+        toggleSidebar("left");
       });
 
       // Add variables for the slider and its status
@@ -350,7 +338,7 @@
       let isAtStart = true;
       const SFcenter = {
         center: [-122.39194543787394, 37.76819361924776],
-        zoom: 14,
+        zoom: 12,
         bearing: 130,
         pitch: 75,
       };
@@ -358,9 +346,9 @@
         const target = isAtStart ? SFcenter : spinGlobe();
         isAtStart = !isAtStart;
         map.flyTo({
-          ...target, 
-          duration: 12000, 
-          essential: true, 
+          ...target,
+          duration: 12000,
+          essential: true,
         });
       });
     </script>
