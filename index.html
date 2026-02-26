@@ -220,23 +220,27 @@
 
     <script>
       // Base Map Initialization
-      // ADD YOUR ACCESS TOKEN FROM https://account.mapbox.com
-      mapboxgl.accessToken =
-        "pk.eyJ1IjoiZWN0MTIzIiwiYSI6ImNtZHRmMHNlMTEzZzgybXEzdzlqcXRiaWwifQ.L5BATSTdpGnoaZCaUfm20A";
-      const initialState = {
-        center: [30, 15],
-        zoom: 3,
-        bearing: 0,
-        pitch: 0,
-      };
-      const map = new mapboxgl.Map({
-        container: "map",
-        style: "mapbox://styles/mapbox/streets-v12",
-        center: initialState.center,
-        zoom: initialState.zoom,
-        bearing: initialState.bearing,
-        pitch: initialState.pitch,
-      });
+      // ADD YOUR ACCESS TOKEN, here we stored our access token away for security reasons
+      fetch("./secret.json")
+        .then((response) => response.json())
+        .then((data) => {
+          mapboxgl.accessToken = data.secret;
+
+          const initialState = {
+            center: [30, 15],
+            zoom: 3,
+            bearing: 0,
+            pitch: 0,
+          };
+          const map = new mapboxgl.Map({
+            container: "map",
+            style: "mapbox://styles/mapbox/streets-v12",
+            center: initialState.center,
+            zoom: initialState.zoom,
+            bearing: initialState.bearing,
+            pitch: initialState.pitch,
+          });
+        });
       // Add menu sidebar
       function toggleSidebar(id) {
         const elem = document.getElementById(id);
