@@ -1,3 +1,5 @@
+
+---
 ### To view this interactive map, click on [this link](https://davidrumseymapcenter.github.io/4x4-interactive/)
 
 > [!note] Helpful References
@@ -130,11 +132,13 @@ On the right side of the page, you will find a column of various buttons, where 
 A menu page will show up on the right side. [Helpful Mapbox Doc here](https://docs.mapbox.com/mapbox-gl-js/example/offset-vanishing-point-with-padding/)
 It has three main sections: 
 1. Ongoing Student Projects
+	- Sanborn Fire Insurance Map Georeferencing. See a similar example: [Atlas Scope](https://www.atlascope.org/)
 2. Modern Maps
 	- SF Timeline
 	- snowy yosemite valley 
 	  ([Snow Layer Mapbox Doc](https://docs.mapbox.com/mapbox-gl-js/example/snow/))
 	  ([Animate Flyover Mapbox Doc](https://docs.mapbox.com/mapbox-gl-js/example/free-camera-point/))
+A small tips I use: find webmap designs I like and look at their html code and try to replicate it. The shortcut for pulling up the html code (for mac) is: option+command+i
 3. Historic Maps
 	- Urbano Monte
 

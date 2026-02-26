@@ -182,7 +182,41 @@
       </div>
     </div>
     <!-- Add the button for flying to SF-->
-    <button id="flytoSF">Fly to 1869 San Francisco</button>
+    <button id="flytoSF">Fly to 1853 San Francisco</button>
+
+    <!-- Add Mapstyles -->
+    <div id="map-styles-bg">
+      <div id="map-styles">
+        <div id="terrain" class>
+          <span></span>
+          "3D Terrain"
+        </div>
+        <div id="'streets-v12">
+          <span></span>
+          "Streets"
+        </div>
+        <div id="outdoors-v11">
+          <span></span>
+          "Outdoors"
+        </div>
+        <div id="light-v10" class="active">
+          <span></span>
+          "Light"
+        </div>
+        <div id="dark-v10">
+          <span></span>
+          "Dark"
+        </div>
+        <div id="satellite-v9">
+          <span></span>
+          "Satellite"
+        </div>
+        <div id="satellite-streets-v11">
+          <span></span>
+          "Satellite Streets"
+        </div>
+      </div>
+    </div>
 
     <script>
       // Base Map Initialization
@@ -227,7 +261,54 @@
       map.addControl(new mapboxgl.NavigationControl());
       map.addControl(new mapboxgl.FullscreenControl());
       map.addControl(new mapboxgl.GeolocateControl());
+      /*
+      // Add Map styles control and info control
+      const mapStyleBg = document.getElementById("map-styles-bg");
+      map.addControl(
+        new MapboxGLButtonControl([
+          {
+            className: "mapboxgl-ctrl-map",
+            title: "Map Style",
+            eventHandler() {
+              mapStyleBg.style.display = "block";
+            },
+          },
+          {
+            className: "mapboxgl-ctrl-info",
+            title: "About David Rumsey Map Center Interactive Map",
+            eventHandler() {
+              infoBg.style.display = "block";
+            },
+          },
+        ])
+      );
+      */
 
+      /*
+      // Event Listener for Map Style Control
+      mapStyleBg.addEventListener("click", () => {
+        mapStyleBg.style.display = "none";
+      });
+      for (const style of [
+        "terrain",
+        "streets-v12",
+        "outdoors-v11",
+        "light-v10",
+        "dark-v10",
+        "satellite-v9",
+        "satellite-streets-v11",
+      ]) {
+        const e = document.getElementById(style);
+        e.addEventListener("click", function (e) {
+          document
+            .querySelector("#map-styles.active")
+            .classList.remove("active");
+          e.target.classList.add("active");
+          mapStyleBg.style.display = "none";
+          mapStyle = style;
+        });
+      }
+      */
       // Add Scale bar at the bottom left
       map.addControl(new mapboxgl.ScaleControl());
 
@@ -280,11 +361,9 @@
         toggleSidebar("left");
       });
 
-      // Add variables for the slider and its status
+      // Add an event listener for the transparency slider.
       const slider = document.getElementById("slider");
       const sliderValue = document.getElementById("slider-value");
-
-      // Add an event listener for the transparency slider.
       slider.addEventListener("input", (e) => {
         map.setPaintProperty(
           "historical-overlay",
@@ -296,8 +375,7 @@
           "raster-opacity",
           parseInt(e.target.value, 10) / 100
         );
-        // Value indicator
-        sliderValue.textContent = e.target.value + "%";
+        sliderValue.textContent = e.target.value + "%"; // Value indicator
       });
 
       // The following values can be changed to control rotation speed:
