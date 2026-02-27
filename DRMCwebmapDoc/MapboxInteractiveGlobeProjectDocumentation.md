@@ -1,4 +1,4 @@
-
+- [ ] Figuring out how to encrypt [Access Token](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets#storing-large-secrets) 
 ---
 ### To view this interactive map, click on [this link](https://davidrumseymapcenter.github.io/4x4-interactive/)
 
