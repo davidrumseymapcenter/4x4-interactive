@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <meta charset="utf-8" />
@@ -222,8 +222,7 @@
     <script>
       // Base Map Initialization
       // ADD YOUR ACCESS TOKEN, here we stored our access token away for security reasons
-      mapboxgl.accessToken =
-        "pk.eyJ1IjoiZWN0MTIzIiwiYSI6ImNtZHRmMHNlMTEzZzgybXEzdzlqcXRiaWwifQ.L5BATSTdpGnoaZCaUfm20A";
+      mapboxgl.accessToken = token;
       const initialState = {
         center: [30, 15],
         zoom: 3,
@@ -370,12 +369,12 @@
         map.setPaintProperty(
           "historical-overlay",
           "raster-opacity",
-          parseInt(e.target.value, 10) / 100
+          parseInt(e.target.value, 10) / 100,
         );
         map.setPaintProperty(
           "historical-overlay2",
           "raster-opacity",
-          parseInt(e.target.value, 10) / 100
+          parseInt(e.target.value, 10) / 100,
         );
         sliderValue.textContent = e.target.value + "%"; // Value indicator
       });
