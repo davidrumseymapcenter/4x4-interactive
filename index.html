@@ -2,28 +2,74 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <script>
+      if (window.location.protocol === "file:") {
+        window.location.replace("http://localhost:8000/index.html");
+      }
+    </script>
     <title>DRMC 4x4 Interactive Display</title>
     <meta
       name="viewport"
       content="initial-scale=1,maximum-scale=1,user-scalable=no"
     />
     <link
-      href="https://api.mapbox.com/mapbox-gl-js/v3.17.0-beta.1/mapbox-gl.css"
+      href="https://unpkg.com/maplibre-gl@6.11.2/dist/maplibre-gl.css"
       rel="stylesheet"
     />
-    <script src="https://api.mapbox.com/mapbox-gl-js/v3.17.0-beta.1/mapbox-gl.js"></script>
     <style>
+      html,
+      body,
+      button,
+      input,
+      select,
+      option,
+      textarea,
+      .maplibregl-popup,
+      .maplibregl-popup-content,
+      .maplibregl-ctrl,
+      .maplibregl-ctrl button {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+      }
       body {
         margin: 0;
         padding: 0;
+        background: #010208;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      }
+      #map-status {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+        max-width: 420px;
+        padding: 20px;
+        background: white;
+        color: #222;
+        border-radius: 8px;
+        box-shadow: 0 2px 16px #0003;
+        font: 16px/1.5 "Helvetica Neue", Helvetica, Arial, sans-serif;
+      }
+      #map-status[hidden] {
+        display: none;
       }
       /* map styles below */
       #map {
         width: 100vw;
         height: 100vh;
+        background-color: #010208;
+        background-image:
+          radial-gradient(circle at 18% 24%, #ffffffcc 0 1px, transparent 1.4px),
+          radial-gradient(circle at 72% 16%, #a9c7ff99 0 1px, transparent 1.3px),
+          radial-gradient(circle at 42% 78%, #ffffff99 0 1px, transparent 1.2px),
+          radial-gradient(circle at 88% 64%, #ffffffaa 0 1px, transparent 1.4px);
+        background-size: 210px 190px, 280px 230px, 170px 240px, 320px 270px;
       }
-      .mapboxgl-canvas {
-        cursor: url("cursor.png"), pointer;
+      .maplibregl-canvas {
+        cursor: grab;
+      }
+      .maplibregl-canvas:active {
+        cursor: grabbing;
       }
       /* transparency slider styles below */
       .map-overlay {
@@ -70,11 +116,190 @@
         background: #fbf8f8;
         cursor: url("cursor.png"), pointer;
       }
-      /* Add a button to fly to SF styles below */
-      #flytoSF {
+      .rotation-button {
+        position: absolute;
+        top: 48px;
+        left: 10px;
+        z-index: 1;
+        min-width: 112px;
+        padding: 7px 10px;
+        border: none;
+        border-radius: 4px;
+        background: #fbf8f8;
+        color: #0d0505;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+        font-size: 14px;
+        cursor: pointer;
+      }
+      .rotation-button:hover {
+        background: #ececec;
+      }
+      .clear-map-button {
+        position: absolute;
+        top: 86px;
+        left: 10px;
+        z-index: 1;
+        min-width: 112px;
+        padding: 7px 10px;
+        border: none;
+        border-radius: 3px;
+        background: #fbf8f8;
+        color: #0d0505;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+        font-size: 14px;
+        cursor: pointer;
+      }
+      .clear-map-button:hover {
+        background: #ececec;
+      }
+      .zoom-slider-control {
+        position: absolute;
+        top: 95px;
+        right: 8px;
+        z-index: 3;
+        display: flex;
+        width: 34px;
+        align-items: center;
+        flex-direction: column;
+        border: 1px solid #aaa;
+        border-radius: 3px;
+        background: rgba(255, 255, 255, 0.96);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+      }
+      .zoom-slider-control button {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        border: 0;
+        background: white;
+        color: #222;
+        font-size: 22px;
+        line-height: 30px;
+        cursor: pointer;
+      }
+      .zoom-slider-control button:hover {
+        background: #eee;
+      }
+      .zoom-slider-control input[type="range"] {
+        width: 22px;
+        height: 132px;
+        margin: 5px 0;
+        padding: 0;
+        accent-color: #666;
+        appearance: slider-vertical;
+        -webkit-appearance: slider-vertical;
+        writing-mode: vertical-lr;
+        direction: rtl;
+        touch-action: none;
+        cursor: ns-resize;
+      }
+      .basemap-control {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        width: calc(100% - 40px);
+        color: #0d0505;
+        font: 14px "Helvetica Neue", Helvetica, Arial, sans-serif;
+      }
+      .basemap-control select {
+        width: 100%;
+        padding: 7px;
+        font: inherit;
+      }
+      .terrain-control {
+        width: calc(100% - 40px);
+        color: #0d0505;
+        font: 14px "Helvetica Neue", Helvetica, Arial, sans-serif;
+      }
+      .compass-dial {
+        position: absolute;
+        right: 10px;
+        bottom: 42px;
+        z-index: 2;
+        width: 90px;
+        height: 90px;
+        border: 3px solid #333;
+        border-radius: 50%;
+        box-sizing: border-box;
+        background: rgba(255, 255, 255, 0.92);
+        box-shadow: 0 1px 5px rgba(0, 0, 0, 0.35);
+        touch-action: none;
+        user-select: none;
+      }
+      .north-node {
+        position: absolute;
+        display: flex;
+        width: 24px;
+        height: 24px;
+        align-items: center;
+        justify-content: center;
+        transform: translate(-50%, -50%);
+        border: 2px solid white;
+        border-radius: 50%;
+        background: #b5121b;
+        color: white;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+        font: bold 13px "Helvetica Neue", Helvetica, Arial, sans-serif;
+        cursor: grab;
+        touch-action: none;
+      }
+      .north-node:active {
+        cursor: grabbing;
+      }
+      .tilt-control {
+        position: absolute;
+        right: 20px;
+        bottom: 150px;
+        z-index: 2;
+        width: 70px;
+        height: 105px;
+        border: 3px solid #1769aa;
+        border-radius: 18px;
+        box-sizing: border-box;
+        background: rgba(239, 248, 255, 0.95);
+        box-shadow: 0 1px 5px rgba(0, 0, 0, 0.35);
+        color: #0d4f84;
+        touch-action: none;
+        user-select: none;
+      }
+      .tilt-label {
+        display: block;
+        margin-top: 5px;
+        text-align: center;
+        font: bold 10px "Helvetica Neue", Helvetica, Arial, sans-serif;
+        letter-spacing: 0.08em;
+      }
+      .tilt-track {
+        position: absolute;
+        top: 27px;
+        bottom: 9px;
+        left: 50%;
+        width: 4px;
+        transform: translateX(-50%);
+        border-radius: 4px;
+        background: #9bc8e8;
+      }
+      .tilt-handle {
+        position: absolute;
+        left: 50%;
+        display: flex;
+        width: 28px;
+        height: 28px;
+        align-items: center;
+        justify-content: center;
+        transform: translate(-50%, -50%);
+        border: 2px solid white;
+        border-radius: 50%;
+        background: #1769aa;
+        color: white;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+        cursor: ns-resize;
+        font: bold 17px "Helvetica Neue", Helvetica, Arial, sans-serif;
+      }
+      /* Historical-map navigation menu */
+      .story-map-select {
         display: block;
         position: absolute;
-        margin: 0px auto;
         width: 20%;
         height: 40px;
         top: 95px;
@@ -88,9 +313,218 @@
         color: #0d0505;
         background: #fbf8f8;
       }
-      #flytoSF:hover {
+      .historical-map-picker,
+      .stairwell-map-picker {
+        position: absolute;
+        right: 45px;
+        z-index: 4;
+        width: 20%;
+      }
+      .historical-map-picker {
+        top: 95px;
+        z-index: 5;
+      }
+      .stairwell-map-picker {
+        top: 140px;
+      }
+      .historical-map-picker summary,
+      .stairwell-map-picker summary {
+        box-sizing: border-box;
+        display: flex;
+        width: 100%;
+        height: 40px;
+        align-items: center;
+        justify-content: center;
+        padding: 5px 26px 5px 8px;
+        overflow: hidden;
+        border-radius: 3px;
+        border-left: 6px solid #008c95;
         background: #fbf8f8;
-        cursor: url("cursor.png"), pointer;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+        color: #0d0505;
+        cursor: pointer;
+        font-size: 14px;
+        list-style: none;
+        text-align: center;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .historical-map-picker summary {
+        border-left: 6px solid #b5121b;
+      }
+      .historical-map-picker summary::-webkit-details-marker,
+      .stairwell-map-picker summary::-webkit-details-marker {
+        display: none;
+      }
+      .historical-map-picker summary::after,
+      .stairwell-map-picker summary::after {
+        content: "▾";
+        position: absolute;
+        right: 10px;
+      }
+      .historical-map-picker summary::after {
+        color: #8e0e16;
+      }
+      .stairwell-map-picker summary::after {
+        color: #006c74;
+      }
+      .historical-map-picker[open] summary::after,
+      .stairwell-map-picker[open] summary::after {
+        content: "▴";
+      }
+      .historical-map-picker summary:hover {
+        background: #fff1f2;
+      }
+      .stairwell-map-picker summary:hover {
+        background: #edfafa;
+      }
+      .historical-map-menu,
+      .stairwell-map-menu {
+        position: absolute;
+        top: 44px;
+        right: 0;
+        box-sizing: border-box;
+        display: grid;
+        width: min(390px, calc(100vw - 70px));
+        max-height: min(620px, calc(100vh - 205px));
+        gap: 7px;
+        padding: 9px;
+        overflow-y: auto;
+        border: 1px solid #b7d4d6;
+        border-radius: 5px;
+        background: rgba(250, 255, 255, 0.98);
+        box-shadow: 0 5px 18px rgba(0, 0, 0, 0.32);
+      }
+      .historical-map-menu {
+        border-color: #dfb8bb;
+        background: rgba(255, 251, 251, 0.98);
+      }
+      .map-menu-section {
+        margin: 4px 3px 0;
+        color: #6f0710;
+        font-size: 11px;
+        font-weight: bold;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .historical-map-option,
+      .stairwell-map-option {
+        display: grid;
+        grid-template-columns: 104px minmax(0, 1fr);
+        gap: 10px;
+        min-height: 74px;
+        padding: 6px;
+        border: 1px solid #d5e5e6;
+        border-radius: 4px;
+        background: white;
+        color: #152628;
+        cursor: pointer;
+        font: 13px/1.25 "Helvetica Neue", Helvetica, Arial, sans-serif;
+        text-align: left;
+      }
+      .historical-map-option {
+        border-color: #ead7d9;
+        color: #2c1719;
+      }
+      .historical-map-option:hover,
+      .historical-map-option:focus-visible {
+        border-color: #b5121b;
+        background: #fff0f1;
+        outline: none;
+      }
+      .stairwell-map-option:hover,
+      .stairwell-map-option:focus-visible {
+        border-color: #008c95;
+        background: #eaf8f8;
+        outline: none;
+      }
+      .historical-map-option img,
+      .stairwell-map-option img {
+        width: 104px;
+        height: 70px;
+        border-radius: 3px;
+        object-fit: cover;
+        background: #dde7e7;
+      }
+      .historical-map-option strong,
+      .historical-map-option small,
+      .stairwell-map-option strong,
+      .stairwell-map-option small {
+        display: block;
+      }
+      .historical-map-option small,
+      .stairwell-map-option small {
+        margin-top: 5px;
+        color: #586567;
+      }
+      .story-map-select {
+        top: 185px;
+        border-left: 6px solid #6f42c1;
+      }
+      .story-map-select:hover {
+        background: #f5f0ff;
+        cursor: pointer;
+      }
+      .pin-details {
+        max-width: 350px;
+        color: #171717;
+        font: 13px/1.42 "Helvetica Neue", Helvetica, Arial, sans-serif;
+      }
+      .pin-details h3 {
+        margin: 0 22px 8px 0;
+        color: #111;
+        font-size: 17px;
+        line-height: 1.2;
+      }
+      .pin-details dl {
+        display: grid;
+        grid-template-columns: max-content 1fr;
+        gap: 3px 8px;
+        margin: 0 0 8px;
+      }
+      .pin-details dt {
+        font-weight: bold;
+      }
+      .pin-details dd {
+        margin: 0;
+      }
+      .pin-details p {
+        margin: 7px 0;
+      }
+      .pin-details a {
+        color: #4c2c91;
+        font-weight: bold;
+      }
+      .pin-details img {
+        display: block;
+        width: 100%;
+        max-height: 430px;
+        margin: 8px 0 10px;
+        border-radius: 4px;
+        object-fit: contain;
+        background: #eee;
+      }
+      .pin-details .preview-note {
+        display: block;
+        margin: -4px 0 9px;
+        color: #596466;
+        font-size: 11px;
+        text-align: center;
+      }
+      .pin-details details {
+        margin: 9px 0;
+      }
+      .pin-details details a {
+        display: block;
+        margin: 4px 0;
+      }
+      .pin-details .catalog-metadata {
+        max-height: 280px;
+        overflow: auto;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: #fafafa;
       }
       /* Add menu side bar*/
       .rounded-rect {
@@ -114,9 +548,11 @@
         position: absolute;
         width: 95%;
         height: 95%;
-        font-family: Arial, Helvetica, sans-serif;
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
         font-size: 14px;
         color: gray;
+        flex-direction: column;
+        gap: 12px;
       }
       .sidebar-toggle {
         position: absolute;
@@ -148,12 +584,29 @@
   </head>
 
   <body>
+    <div id="map-status" role="status">
+      Loading map… If this message stays on screen, open
+      <a href="http://localhost:8000/index.html">the localhost preview</a>.
+    </div>
     <!-- Add the map container -->
     <div id="map">
       <!-- Add the menu sidebar -->
       <div id="right" class="sidebar flex-center right collapsed">
         <div class="sidebar-content rounded-rect flex-center">
-          Under Construction...
+          <strong>Map Options</strong>
+          <label class="basemap-control" for="basemap-select">
+            Basemap
+            <select id="basemap-select" disabled>
+              <option value="streets">Streets</option>
+              <option value="terrain">Terrain</option>
+              <option value="satellite" selected>Satellite</option>
+              <option value="satellite-labels">Satellite + Labels</option>
+            </select>
+          </label>
+          <label class="terrain-control" for="terrain-toggle">
+            <input id="terrain-toggle" type="checkbox" checked disabled />
+            3D terrain relief
+          </label>
           <div
             class="sidebar-toggle rounded-rect right"
             onclick="toggleSidebar('right')"
@@ -165,24 +618,126 @@
         </div>
       </div>
     </div>
+    <div
+      id="zoom-slider-control"
+      class="zoom-slider-control"
+      role="group"
+      aria-label="Map zoom"
+    >
+      <button id="zoom-in" type="button" aria-label="Zoom in">+</button>
+      <input
+        id="zoom-slider"
+        type="range"
+        min="0"
+        max="18"
+        step="0.1"
+        value="3"
+        aria-label="Drag to zoom the map"
+      />
+      <button id="zoom-out" type="button" aria-label="Zoom out">−</button>
+    </div>
+    <div
+      id="compass-dial"
+      class="compass-dial"
+      role="group"
+      tabindex="0"
+      aria-label="Compass direction"
+      title="Drag N around the compass to rotate. Double-click it for north up."
+    >
+      <span id="north-node" class="north-node">N</span>
+    </div>
+    <div
+      id="tilt-control"
+      class="tilt-control"
+      role="slider"
+      tabindex="0"
+      aria-label="Camera tilt"
+      aria-valuemin="0"
+      aria-valuemax="75"
+      aria-valuenow="0"
+      title="Drag the blue button up for a lower viewing angle and down for an overhead view."
+    >
+      <span class="tilt-label">TILT</span>
+      <span class="tilt-track"></span>
+      <span id="tilt-handle" class="tilt-handle">↕</span>
+    </div>
     <!-- Add the reset button-->
     <button id="reset" class="reset-button">Reset</button>
+    <button
+      id="toggle-rotation"
+      class="rotation-button"
+      type="button"
+      aria-pressed="false"
+    >
+      Pause rotation
+    </button>
+    <button id="clear-map" class="clear-map-button" type="button" hidden>
+      Clear map
+    </button>
     <!-- Add a container for the transparency slider to the map. -->
-    <div class="map-overlay top">
+    <div class="map-overlay top" hidden>
       <div class="map-overlay-inner">
-        <label>Layer Opacity: <span id="slider-value">100%</span></label>
+        <label
+          ><span id="slider-label-text">1853 map opacity</span>:
+          <span id="slider-value">100%</span></label
+        >
         <input
           id="slider"
           type="range"
           min="0"
           max="100"
-          step="0"
+          step="1"
           value="100"
         />
+        <small id="historical-credit">
+          <a
+            href="https://www.davidrumsey.com/luna/servlet/detail/RUMSEY~8~1~2210~180022"
+            target="_blank"
+            rel="noopener"
+            >David Rumsey Map Collection</a
+          >
+        </small>
       </div>
     </div>
-    <!-- Add the button for flying to SF-->
-    <button id="flytoSF">Fly to 1853 San Francisco</button>
+    <details id="historical-map-picker" class="historical-map-picker">
+      <summary><span id="historical-map-summary">See map…</span></summary>
+      <div
+        id="historical-map-menu"
+        class="historical-map-menu"
+        role="listbox"
+        aria-label="Historical maps"
+      ></div>
+    </details>
+    <select
+      id="historical-map-select"
+      hidden
+      aria-hidden="true"
+      tabindex="-1"
+    >
+      <option value="" selected disabled>See map…</option>
+      <option value="sf1853">1853 San Francisco</option>
+      <option value="chinatown1929">1929 Chinatown</option>
+      <option value="yosemite1883">1883 Yosemite</option>
+    </select>
+    <details id="stairwell-map-picker" class="stairwell-map-picker">
+      <summary><span id="stairwell-map-summary">The Stairwell Maps…</span></summary>
+      <div
+        id="stairwell-map-menu"
+        class="stairwell-map-menu"
+        role="listbox"
+        aria-label="The Stairwell Maps"
+      ></div>
+    </details>
+    <select id="stairwell-map-select" hidden aria-hidden="true" tabindex="-1">
+      <option value="" selected>The Stairwell Maps…</option>
+    </select>
+    <select
+      id="story-map-select"
+      class="story-map-select"
+      aria-label="See a location story"
+    >
+      <option value="" selected disabled>See story…</option>
+    </select>
 
     <!-- Add Mapstyles -->
     <div id="map-styles-bg">
@@ -218,25 +773,975 @@
       </div>
     </div>
 
-    <script src="secret.js"></script>
     <script>
+      let mapHasLoaded = false;
+
+      function showMapError(message) {
+        const status = document.getElementById("map-status");
+        status.textContent = "The map could not load: " + message;
+        status.hidden = false;
+      }
+      window.addEventListener("error", (event) => {
+        if (!mapHasLoaded && event.message && event.message !== "Script error.") {
+          showMapError(event.message);
+        }
+      });
+      window.addEventListener("unhandledrejection", (event) => {
+        if (!mapHasLoaded) {
+          showMapError(event.reason?.message || String(event.reason));
+        }
+      });
+    </script>
+    <script src="./rumsey-maps.js?v=20261014-3"></script>
+    <script src="./rumsey-preview-index.js?v=20261014-3"></script>
+    <script src="./rumsey-georeferencer.js"></script>
+    <script src="./stairwell-maps.js"></script>
+    <script type="module">
+      let maplibregl;
+      try {
+        maplibregl = await import(
+          "https://unpkg.com/maplibre-gl@6.11.2/dist/maplibre-gl.mjs"
+        );
+      } catch (error) {
+        showMapError(
+          "The map library could not be downloaded. Check your internet connection.",
+        );
+        throw error;
+      }
+
       // Base Map Initialization
-      // ADD YOUR ACCESS TOKEN, here we stored our access token away for security reasons
-      mapboxgl.accessToken = token;
       const initialState = {
         center: [30, 15],
         zoom: 3,
         bearing: 0,
         pitch: 0,
       };
-      const map = new mapboxgl.Map({
+      const map = new maplibregl.Map({
         container: "map",
-        style: "mapbox://styles/mapbox/streets-v12",
+        style: {
+          version: 8,
+          glyphs: "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
+          projection: {
+            type: "globe",
+          },
+          sources: {
+            openstreetmap: {
+              type: "raster",
+              tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+              tileSize: 256,
+              minzoom: 0,
+              maxzoom: 19,
+              attribution:
+                '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
+            },
+            opentopomap: {
+              type: "raster",
+              tiles: ["https://tile.opentopomap.org/{z}/{x}/{y}.png"],
+              tileSize: 256,
+              minzoom: 0,
+              maxzoom: 17,
+              attribution:
+                'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>, SRTM | Map style &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)',
+            },
+            satellite: {
+              type: "raster",
+              tiles: [
+                "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+              ],
+              tileSize: 256,
+              minzoom: 0,
+              maxzoom: 19,
+              attribution:
+                'Tiles &copy; <a href="https://www.esri.com/">Esri</a>, Vantor, Earthstar Geographics, and the GIS User Community',
+            },
+            "satellite-labels": {
+              type: "raster",
+              tiles: [
+                "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}",
+              ],
+              tileSize: 256,
+              minzoom: 0,
+              maxzoom: 19,
+              attribution: 'Labels &copy; <a href="https://www.esri.com/">Esri</a>',
+            },
+            "terrain-dem": {
+              type: "raster-dem",
+              url: "https://tiles.mapterhorn.com/tilejson.json",
+            },
+          },
+          layers: [
+            {
+              id: "openstreetmap-basemap",
+              type: "raster",
+              source: "openstreetmap",
+              layout: {
+                visibility: "none",
+              },
+            },
+            {
+              id: "opentopomap-basemap",
+              type: "raster",
+              source: "opentopomap",
+              layout: {
+                visibility: "none",
+              },
+            },
+            {
+              id: "satellite-basemap",
+              type: "raster",
+              source: "satellite",
+              layout: {
+                visibility: "visible",
+              },
+            },
+            {
+              id: "satellite-labels-basemap",
+              type: "raster",
+              source: "satellite-labels",
+              layout: {
+                visibility: "none",
+              },
+            },
+          ],
+        },
         center: initialState.center,
         zoom: initialState.zoom,
         bearing: initialState.bearing,
         pitch: initialState.pitch,
+        maxPitch: 85,
+        canvasContextAttributes: { antialias: true },
       });
+
+      const zoomSlider = document.getElementById("zoom-slider");
+      const zoomInButton = document.getElementById("zoom-in");
+      const zoomOutButton = document.getElementById("zoom-out");
+
+      function useZoomControl(targetZoom, animate = true) {
+        spinEnabled = false;
+        userInteracting = true;
+        updateRotationButton();
+        const zoom = Math.min(18, Math.max(0, targetZoom));
+        map.stop();
+        if (animate) {
+          map.easeTo({ zoom, duration: 250 });
+        } else {
+          map.setZoom(zoom);
+        }
+      }
+
+      zoomSlider.addEventListener("input", (event) => {
+        useZoomControl(parseFloat(event.target.value), false);
+      });
+      zoomInButton.addEventListener("click", () => {
+        useZoomControl(Math.floor(map.getZoom()) + 1);
+      });
+      zoomOutButton.addEventListener("click", () => {
+        useZoomControl(Math.ceil(map.getZoom()) - 1);
+      });
+      map.on("zoom", () => {
+        zoomSlider.value = map.getZoom().toFixed(1);
+      });
+
+      // Google Earth-style orientation gestures. Trackpads emit small pixel
+      // wheel deltas for two-finger swipes; mouse wheels emit larger steps.
+      const mapCanvasContainer = map.getCanvasContainer();
+      mapCanvasContainer.addEventListener(
+        "wheel",
+        (event) => {
+          const looksLikeTrackpad =
+            !event.ctrlKey &&
+            event.deltaMode === WheelEvent.DOM_DELTA_PIXEL &&
+            (Math.abs(event.deltaX) > 0 || Math.abs(event.deltaY) < 50);
+          if (!looksLikeTrackpad) return;
+
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          spinEnabled = false;
+          updateRotationButton();
+          map.jumpTo({
+            bearing: map.getBearing() + event.deltaX * 0.25,
+            pitch: Math.min(
+              75,
+              Math.max(0, map.getPitch() + event.deltaY * 0.15),
+            ),
+          });
+        },
+        { capture: true, passive: false },
+      );
+
+      let middleMouseDragging = false;
+      let middleMouseX = 0;
+      let middleMouseY = 0;
+      mapCanvasContainer.addEventListener(
+        "mousedown",
+        (event) => {
+          if (event.button !== 1) return;
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          middleMouseDragging = true;
+          middleMouseX = event.clientX;
+          middleMouseY = event.clientY;
+          spinEnabled = false;
+          updateRotationButton();
+          map.getCanvas().style.cursor = "grabbing";
+        },
+        true,
+      );
+      window.addEventListener("mousemove", (event) => {
+        if (!middleMouseDragging) return;
+        const dx = event.clientX - middleMouseX;
+        const dy = event.clientY - middleMouseY;
+        middleMouseX = event.clientX;
+        middleMouseY = event.clientY;
+        map.jumpTo({
+          bearing: map.getBearing() + dx * 0.35,
+          pitch: Math.min(75, Math.max(0, map.getPitch() - dy * 0.25)),
+        });
+      });
+      window.addEventListener("mouseup", (event) => {
+        if (event.button !== 1 || !middleMouseDragging) return;
+        middleMouseDragging = false;
+        map.getCanvas().style.cursor = "grab";
+      });
+      mapCanvasContainer.addEventListener("auxclick", (event) => {
+        if (event.button === 1) event.preventDefault();
+      });
+
+      const loadTimeout = window.setTimeout(() => {
+        showMapError("The basemap took too long to load. Check your internet connection and refresh the page.");
+      }, 15000);
+      map.on("error", (event) => {
+        if (
+          ["openstreetmap", "opentopomap", "satellite", "satellite-labels"].includes(
+            event.sourceId,
+          )
+        ) {
+          showMapError(event.error?.message || "Basemap tiles could not be downloaded.");
+        }
+        if (event.sourceId?.startsWith("catalog-")) {
+          const credit = document.getElementById("historical-credit");
+          let failure = credit.querySelector(".overlay-load-error");
+          if (!failure) {
+            failure = document.createElement("span");
+            failure.className = "overlay-load-error";
+            credit.appendChild(failure);
+          }
+          failure.textContent = " · Overlay image could not be downloaded";
+        }
+      });
+      map.getCanvas().addEventListener("webglcontextlost", (event) => {
+        event.preventDefault();
+        showMapError(
+          "The graphics processor stopped rendering the globe. Close other graphics-heavy tabs and reload this page.",
+        );
+      });
+      map.once("load", () => {
+        mapHasLoaded = true;
+        window.clearTimeout(loadTimeout);
+        map.setSky({
+          "sky-color": "#010208",
+          "sky-horizon-blend": 0.08,
+          "horizon-color": "#02040a",
+          "horizon-fog-blend": 0.08,
+          "fog-color": "#050812",
+          "fog-ground-blend": 0.12,
+        });
+        document.getElementById("map-status").hidden = true;
+        document.getElementById("basemap-select").disabled = false;
+        document.getElementById("terrain-toggle").disabled = false;
+        setTerrainEnabled(true);
+      });
+
+      const georeferencerSources =
+        window.RUMSEY_GEOREFERENCER_SOURCES || {};
+      const rumseyCatalog = Array.isArray(window.RUMSEY_KML_MAPS)
+        ? window.RUMSEY_KML_MAPS.map((entry) => ({
+            ...entry,
+            ...(georeferencerSources[entry.id] || {}),
+          }))
+        : [];
+      const historicalMapSelect = document.getElementById(
+        "historical-map-select",
+      );
+      const featuredMapDetails = {
+        sf1853: {
+          title: "San Francisco & vicinity",
+          date: "1853",
+          creator: "United States Coast Survey",
+          subject: "San Francisco shortly after the California Gold Rush",
+          summary:
+            "Vogdes identifies this as the first edition. The survey was completed in April 1852, with interior topography taken from Eddy's official city map. This edition adds soundings and records the city's piers and waterfront buildings. The map is without color.",
+          sourceUrl:
+            "https://www.davidrumsey.com/luna/servlet/detail/RUMSEY~8~1~2210~180022",
+          imageUrl:
+            "https://www.davidrumsey.com/luna/servlet/iiif/RUMSEY~8~1~2210~180022/full/!1400,1400/0/default.jpg",
+        },
+        chinatown1929: {
+          title: "1929 Chinatown",
+          date: "1929",
+          creator: "J. P. Wong",
+          subject: "San Francisco Chinatown, with an inset of Oakland Chinatown",
+          summary:
+            "A bilingual map showing Chinatown's blocks, lots, addresses, businesses, and residences. It was the first known map of San Francisco made by Chinese Americans for the Chinese community.",
+          sourceUrl: "https://purl.stanford.edu/pt740jp0404",
+          imageUrl:
+            "https://stacks.stanford.edu/image/iiif/pt740jp0404%2FSFChinatown_wgs84/full/1200,/0/default.jpg",
+        },
+        yosemite1883: {
+          title: "Topographical Map of the Yosemite Valley and Vicinity",
+          date: "1883",
+          creator: "G. M. Wheeler",
+          subject: "Yosemite Valley and vicinity",
+          summary:
+            "A preliminary edition showing Yosemite Valley in hachures with a light cream tint. It was prepared from Lt. Macomb's November 30, 1883 topographical plat for the U.S. Geographical Surveys West of the 100th Meridian.",
+          sourceUrl:
+            "https://www.davidrumsey.com/luna/servlet/detail/RUMSEY~8~1~405~40014",
+          imageUrl:
+            "https://www.davidrumsey.com/luna/servlet/iiif/RUMSEY~8~1~405~40014/full/!1400,1400/0/default.jpg",
+        },
+      };
+      const stairwellMapLocations = [
+        {
+          id: "stairwell-grand-canon",
+          title: "Grand Canon at the Foot of the Toroweap",
+          location: "Grand Canyon, Arizona",
+          center: [-113.05, 36.24],
+          zoom: 8.2,
+          date: "1882",
+          creator: "Clarence E. Dutton and William Henry Holmes",
+          subject: "A panoramic view looking east from Toroweap",
+          summary: "A full-color U.S. Geological Survey panorama from the atlas accompanying Dutton's Tertiary History of the Grand Canon District.",
+          url: "https://www.davidrumsey.com/luna/servlet/detail/RUMSEY~8~1~1314~90145",
+          imageUrl: "https://www.davidrumsey.com/luna/servlet/iiif/RUMSEY~8~1~1314~90145/full/!1400,1400/0/default.jpg",
+        },
+        {
+          id: "stairwell-south-america",
+          title: "Mapa Geografico de America Meridional — Composite",
+          location: "South America",
+          center: [-60, -18],
+          zoom: 3.2,
+          date: "1775",
+          creator: "Juan de la Cruz Cano y Olmedilla and Hippolytus Ricarte",
+          subject: "Eight-sheet wall map of South America",
+          summary: "The complete eight-sheet map joined into the official David Rumsey composite. One selection displays the entire work together.",
+          url: "https://www.davidrumsey.com/luna/servlet/detail/RUMSEY~8~1~240074~90115526",
+          imageUrl: "https://www.davidrumsey.com/luna/servlet/iiif/RUMSEY~8~1~240074~90115526/full/!1400,1400/0/default.jpg",
+          relatedLinks: [
+            ["Sheet 1", "https://www.davidrumsey.com/luna/servlet/detail/RUMSEY~8~1~240067~5512118"],
+            ["Sheet 2", "https://www.davidrumsey.com/luna/servlet/detail/RUMSEY~8~1~240068~5512119"],
+            ["Sheet 3", "https://www.davidrumsey.com/luna/servlet/detail/RUMSEY~8~1~240069~5512120"],
+            ["Sheet 4", "https://www.davidrumsey.com/luna/servlet/detail/RUMSEY~8~1~240070~5512121"],
+            ["Sheet 5", "https://www.davidrumsey.com/luna/servlet/detail/RUMSEY~8~1~240071~5512122"],
+            ["Sheet 6", "https://www.davidrumsey.com/luna/servlet/detail/RUMSEY~8~1~240072~5512123"],
+            ["Sheet 7", "https://www.davidrumsey.com/luna/servlet/detail/RUMSEY~8~1~240073~5512124"],
+            ["Sheet 8", "https://www.davidrumsey.com/luna/servlet/detail/RUMSEY~8~1~240062~5512134"],
+          ],
+        },
+        {
+          id: "stairwell-afrique-spheroidale",
+          title: "Afrique spheroidale",
+          location: "Africa",
+          center: [20, 2],
+          zoom: 3.3,
+          date: "1862",
+          creator: "F. A. Garnier",
+          subject: "Africa shown in a spheroidal projection",
+          summary: "A full-color map from Garnier's Atlas spheroidal et universel de geographie, with relief shown by hachures.",
+          url: "https://www.davidrumsey.com/luna/servlet/detail/RUMSEY~8~1~22016~700048",
+          imageUrl: "https://www.davidrumsey.com/luna/servlet/iiif/RUMSEY~8~1~22016~700048/full/!1400,1400/0/default.jpg",
+        },
+        {
+          id: "stairwell-nova-granada",
+          title: "Paskaerte Van Nova Granada en t'Eylandt California",
+          location: "California and western Mexico",
+          center: [-112, 29],
+          zoom: 3.8,
+          date: "1666",
+          creator: "Pieter Goos",
+          subject: "Nautical chart depicting California as an island",
+          summary: "A richly colored Dutch sea chart centered on the celebrated seventeenth-century depiction of California as an island.",
+          url: "https://www.davidrumsey.com/luna/servlet/detail/RUMSEY~8~1~285936~90058454",
+          imageUrl: "https://www.davidrumsey.com/luna/servlet/iiif/RUMSEY~8~1~285936~90058454/full/!1400,1400/0/default.jpg",
+        },
+        {
+          id: "stairwell-utah-basin",
+          title: "Utah Basin — Geological",
+          location: "Utah",
+          center: [-112.3, 40.5],
+          zoom: 6.2,
+          date: "1876",
+          creator: "Clarence King",
+          subject: "Geology of the Utah Basin along the 40th Parallel Survey",
+          summary: "A geological survey map extending across the Utah Basin, published with Clarence King's survey of the fortieth parallel.",
+          url: "https://www.davidrumsey.com/luna/servlet/detail/RUMSEY~8~1~1943~140018",
+          imageUrl: "https://www.davidrumsey.com/luna/servlet/iiif/RUMSEY~8~1~1943~140018/full/!1400,1400/0/default.jpg",
+        },
+        {
+          id: "stairwell-mountains-rivers",
+          title: "Heights of the Principal Mountains in the World",
+          location: "World",
+          center: [20, 20],
+          zoom: 2.1,
+          date: "1836",
+          creator: "Henry S. Tanner; engraved by F. Humphrys",
+          subject: "Comparative heights of mountains and lengths of rivers",
+          summary: "An early data visualization comparing major mountain heights and river lengths across the world.",
+          url: "https://www.davidrumsey.com/luna/servlet/detail/RUMSEY~8~1~1963~150001",
+          imageUrl: "https://www.davidrumsey.com/luna/servlet/iiif/RUMSEY~8~1~1963~150001/full/!1400,1400/0/default.jpg",
+        },
+        {
+          id: "stairwell-nanzenbushu",
+          title: "Nanzenbushu bankoku shoka no zu",
+          location: "Buddhist world centered on Asia",
+          center: [82, 26],
+          zoom: 3,
+          date: "1710",
+          creator: "Hotan",
+          subject: "Buddhist cosmographic world map",
+          summary: "A hand-colored Japanese woodblock map combining Buddhist geography with contemporary European geographic knowledge.",
+          url: "https://www.davidrumsey.com/luna/servlet/detail/RUMSEY~8~1~34362~1171565",
+          imageUrl: "https://www.davidrumsey.com/luna/servlet/iiif/RUMSEY~8~1~34362~1171565/full/!1400,1400/0/default.jpg",
+        },
+        {
+          id: "stairwell-celestial",
+          title: "Plate 2: Cetus, Aquarius, Andromeda",
+          location: "Celestial sphere",
+          center: [0, 0],
+          zoom: 2.1,
+          date: "1693",
+          creator: "Ignace Gaston Pardies; engraved by Gaspard Duchange",
+          subject: "Cetus, Aquarius, Andromeda, and neighboring constellations",
+          summary: "One of six engraved and colored star charts from Pardies' gnomonic projection of the celestial globe.",
+          url: "https://www.davidrumsey.com/luna/servlet/detail/RUMSEY~8~1~231321~5508809",
+          imageUrl: "https://www.davidrumsey.com/luna/servlet/iiif/RUMSEY~8~1~231321~5508809/full/!1400,1400/0/default.jpg",
+        },
+        {
+          id: "stairwell-new-york",
+          title: "New York City Picture Map",
+          location: "Midtown Manhattan",
+          center: [-73.9855, 40.7549],
+          zoom: 12,
+          date: "1963",
+          creator: "Hermann Bollmann",
+          subject: "Three-dimensional pictorial map of Midtown Manhattan",
+          summary: "A highly detailed hand-drawn bird's-eye map based on tens of thousands of ground and aerial photographs.",
+          url: "https://www.davidrumsey.com/luna/servlet/detail/RUMSEY~8~1~263156~5524103",
+          imageUrl: "https://www.davidrumsey.com/luna/servlet/iiif/RUMSEY~8~1~263156~5524103/full/!1400,1400/0/default.jpg",
+        },
+        {
+          id: "stairwell-dai-toa",
+          title: "Dai Toa Koeiken meguri — Sugoroku",
+          location: "East Asia",
+          center: [125, 27],
+          zoom: 3.3,
+          date: "1944",
+          creator: "Ichisaburo Sawai",
+          subject: "Pictorial board-game map of East Asia",
+          summary: "A wartime sugoroku game board depicting a journey around the Greater East Asia Co-prosperity Sphere.",
+          url: "https://www.davidrumsey.com/luna/servlet/detail/RUMSEY~8~1~289702~90133892",
+          imageUrl: "https://www.davidrumsey.com/luna/servlet/iiif/RUMSEY~8~1~289702~90133892/full/!1400,1400/0/default.jpg",
+        },
+      ];
+      const stairwellMaps = stairwellMapLocations.map((entry) => ({
+        ...entry,
+        ...(window.STAIRWELL_MAP_METADATA?.[entry.id] || {}),
+      }));
+      const storyLocations = [
+        {
+          id: "story-disappearing-border",
+          title: "A Disappearing Border",
+          location: "Hong Kong",
+          center: [114.1694, 22.3193],
+          zoom: 10.5,
+          date: "2023",
+          creator: "Jessie Kong — HISTORY 291E Final Map Teaching Project",
+          subject: "Hong Kong's changing border",
+          summary: "Tracking Hong Kong's fading border with maps.",
+          url: "https://storymaps.arcgis.com/stories/a0aecc0046444a6eafdd403e9664858f",
+        },
+        {
+          id: "story-european-fronts",
+          title: "The European Fronts",
+          location: "Europe",
+          center: [15, 50],
+          zoom: 3.8,
+          date: "2020",
+          creator: "Andria Olson for Branner Library Map Collections",
+          subject: "Historical maps of the European fronts",
+          summary: "Explores how paper maps of the European fronts were given a second life through digitization and interactive mapping.",
+          url: "https://storymaps.arcgis.com/stories/e37b05044faf4d9cb040be88dab8a7fa",
+        },
+      ];
+      const detailsPopup = new maplibregl.Popup({
+        closeButton: true,
+        closeOnClick: false,
+        maxWidth: "520px",
+        offset: 14,
+      });
+
+      function createDetailsCard(details, isStory = false) {
+        const card = document.createElement("article");
+        card.className = "pin-details";
+        const heading = document.createElement("h3");
+        heading.textContent = details.title || details.name;
+        card.appendChild(heading);
+
+        const attributes = document.createElement("dl");
+        const rows = [
+          ["Date", details.date || "Not listed"],
+          ["Creator", details.creator || "Not listed in the catalog"],
+          ["Depicts", details.subject || details.location || "Not listed"],
+        ];
+        rows.forEach(([label, value]) => {
+          const term = document.createElement("dt");
+          term.textContent = label;
+          const description = document.createElement("dd");
+          description.textContent = value;
+          attributes.append(term, description);
+        });
+        card.appendChild(attributes);
+
+        const summary = document.createElement("p");
+        summary.className = "map-description";
+        summary.textContent =
+          details.summary || "No summary was included in this catalog record.";
+        card.appendChild(summary);
+
+        if (details.imageUrl) {
+          const imageLink = document.createElement("a");
+          imageLink.href = details.imageUrl;
+          imageLink.target = "_blank";
+          imageLink.rel = "noopener";
+          imageLink.title = "Open the full map image";
+          const preview = document.createElement("img");
+          preview.src = details.imageUrl;
+          preview.alt = details.title || details.name;
+          preview.loading = "lazy";
+          imageLink.appendChild(preview);
+          card.appendChild(imageLink);
+          const previewNote = document.createElement("small");
+          previewNote.className = "preview-note";
+          previewNote.textContent =
+            "Click the preview to open the full-resolution map.";
+          card.appendChild(previewNote);
+        }
+
+        if (Array.isArray(details.relatedLinks) && details.relatedLinks.length) {
+          const related = document.createElement("details");
+          const relatedSummary = document.createElement("summary");
+          relatedSummary.textContent = "View all eight sheet records";
+          related.appendChild(relatedSummary);
+          details.relatedLinks.forEach(([label, url]) => {
+            const link = document.createElement("a");
+            link.href = url;
+            link.target = "_blank";
+            link.rel = "noopener";
+            link.textContent = label + " ↗";
+            related.appendChild(link);
+          });
+          card.appendChild(related);
+        }
+
+        if (Array.isArray(details.fullMetadata) && details.fullMetadata.length) {
+          const catalogDetails = document.createElement("details");
+          const catalogSummary = document.createElement("summary");
+          catalogSummary.textContent = "Full David Rumsey catalog metadata";
+          catalogDetails.appendChild(catalogSummary);
+          const catalogList = document.createElement("dl");
+          catalogList.className = "catalog-metadata";
+          details.fullMetadata.forEach(({ label, values }) => {
+            const term = document.createElement("dt");
+            term.textContent = label;
+            const description = document.createElement("dd");
+            description.textContent = values.join("; ");
+            catalogList.append(term, description);
+          });
+          catalogDetails.appendChild(catalogList);
+          card.appendChild(catalogDetails);
+        }
+
+        const sourceUrl = isStory
+          ? details.url
+          : details.sourceUrl || details.url || details.kml;
+        if (sourceUrl) {
+          const link = document.createElement("a");
+          link.href = sourceUrl;
+          link.target = "_blank";
+          link.rel = "noopener";
+          link.textContent = isStory ? "Open the full StoryMap ↗" : "View map record ↗";
+          card.appendChild(link);
+        }
+        return card;
+      }
+
+      function showDetailsPopup(details, coordinates, isStory = false) {
+        detailsPopup
+          .setLngLat(coordinates)
+          .setDOMContent(createDetailsCard(details, isStory))
+          .addTo(map);
+      }
+
+      function condensedMapTitle(title, maximumLength = 34) {
+        const cleanTitle = title
+          .replace(/\s*\([^)]*\)\s*/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+        if (cleanTitle.length <= maximumLength) return cleanTitle;
+        const shortened = cleanTitle.slice(0, maximumLength - 1);
+        const lastSpace = shortened.lastIndexOf(" ");
+        return shortened.slice(0, Math.max(lastSpace, 18)) + "…";
+      }
+
+      const storyMapSelect = document.getElementById("story-map-select");
+      const historicalMapPicker = document.getElementById(
+        "historical-map-picker",
+      );
+      const historicalMapMenu = document.getElementById(
+        "historical-map-menu",
+      );
+      const historicalMapSummary = document.getElementById(
+        "historical-map-summary",
+      );
+      const stairwellMapSelect = document.getElementById(
+        "stairwell-map-select",
+      );
+      const stairwellMapPicker = document.getElementById(
+        "stairwell-map-picker",
+      );
+      const stairwellMapMenu = document.getElementById("stairwell-map-menu");
+      const stairwellMapSummary = document.getElementById(
+        "stairwell-map-summary",
+      );
+
+      function resetHistoricalPicker() {
+        historicalMapSelect.selectedIndex = 0;
+        historicalMapSummary.textContent = "See map…";
+        historicalMapPicker.open = false;
+      }
+
+      function catalogPreviewUrl(entry) {
+        if (entry.imageUrl) {
+          return entry.imageUrl.replace(
+            "/full/!1400,1400/",
+            "/full/!240,160/",
+          );
+        }
+        if (entry.previewUrl) return entry.previewUrl;
+        const representativePreview = window.RUMSEY_PREVIEW_IMAGES?.[entry.id];
+        if (representativePreview) return representativePreview;
+        const overlays = Array.isArray(entry.overlays) ? entry.overlays : [];
+        if (!overlays.length) return "";
+        const [targetLongitude, targetLatitude] = entry.center;
+        const nearestOverlay = overlays.reduce((nearest, overlay) => {
+          const coordinates = Array.isArray(overlay.coordinates)
+            ? overlay.coordinates
+            : [];
+          if (!coordinates.length) return nearest;
+          const longitude =
+            coordinates.reduce((sum, point) => sum + point[0], 0) /
+            coordinates.length;
+          const latitude =
+            coordinates.reduce((sum, point) => sum + point[1], 0) /
+            coordinates.length;
+          const distance =
+            (longitude - targetLongitude) ** 2 +
+            (latitude - targetLatitude) ** 2;
+          return !nearest || distance < nearest.distance
+            ? { url: overlay.url, distance }
+            : nearest;
+        }, null);
+        return nearestOverlay?.url || overlays[0].url;
+      }
+
+      function addHistoricalPreview(entry, featured = false) {
+        const previewButton = document.createElement("button");
+        previewButton.type = "button";
+        previewButton.className = "historical-map-option";
+        previewButton.setAttribute("role", "option");
+        previewButton.dataset.mapId = entry.id;
+
+        const preview = document.createElement("img");
+        const previewUrl = catalogPreviewUrl(entry);
+        if (previewUrl) preview.src = previewUrl;
+        preview.alt = "";
+        preview.loading = "lazy";
+        preview.decoding = "async";
+
+        const text = document.createElement("span");
+        const title = document.createElement("strong");
+        title.textContent = entry.title || entry.name;
+        const details = document.createElement("small");
+        details.textContent = [
+          entry.date,
+          entry.creator || entry.subject,
+          featured ? "Featured map" : "David Rumsey collection",
+        ]
+          .filter(Boolean)
+          .join(" · ");
+        text.append(title, details);
+        previewButton.append(preview, text);
+        previewButton.addEventListener("click", () => {
+          historicalMapSelect.value = entry.id;
+          historicalMapSummary.textContent = condensedMapTitle(
+            entry.title || entry.name,
+            30,
+          );
+          historicalMapPicker.open = false;
+          historicalMapSelect.dispatchEvent(new Event("change"));
+        });
+        historicalMapMenu.appendChild(previewButton);
+      }
+
+      const featuredMaps = [
+        { id: "sf1853", ...featuredMapDetails.sf1853 },
+        { id: "chinatown1929", ...featuredMapDetails.chinatown1929 },
+        { id: "yosemite1883", ...featuredMapDetails.yosemite1883 },
+      ];
+      const featuredHeading = document.createElement("div");
+      featuredHeading.className = "map-menu-section";
+      featuredHeading.textContent = "Featured maps";
+      historicalMapMenu.appendChild(featuredHeading);
+      featuredMaps.forEach((entry) => addHistoricalPreview(entry, true));
+
+      if (rumseyCatalog.length) {
+        const catalogHeading = document.createElement("div");
+        catalogHeading.className = "map-menu-section";
+        catalogHeading.textContent = "Rumsey collection";
+        historicalMapMenu.appendChild(catalogHeading);
+        rumseyCatalog.forEach((entry) => addHistoricalPreview(entry));
+      }
+
+      function resetStairwellPicker() {
+        stairwellMapSelect.selectedIndex = 0;
+        stairwellMapSummary.textContent = "The Stairwell Maps…";
+        stairwellMapPicker.open = false;
+      }
+
+      stairwellMaps.forEach((entry) => {
+        const option = document.createElement("option");
+        option.value = entry.id;
+        option.textContent = entry.title;
+        stairwellMapSelect.appendChild(option);
+
+        const previewButton = document.createElement("button");
+        previewButton.type = "button";
+        previewButton.className = "stairwell-map-option";
+        previewButton.setAttribute("role", "option");
+        previewButton.dataset.mapId = entry.id;
+        const preview = document.createElement("img");
+        preview.src = entry.imageUrl.replace(
+          "/full/!1400,1400/",
+          "/full/!240,160/",
+        );
+        preview.alt = "";
+        preview.loading = "lazy";
+        const text = document.createElement("span");
+        const title = document.createElement("strong");
+        title.textContent = entry.title;
+        const details = document.createElement("small");
+        details.textContent = [entry.date, entry.creator]
+          .filter(Boolean)
+          .join(" · ");
+        text.append(title, details);
+        previewButton.append(preview, text);
+        previewButton.addEventListener("click", () => {
+          stairwellMapSelect.value = entry.id;
+          stairwellMapSummary.textContent = condensedMapTitle(entry.title, 30);
+          stairwellMapPicker.open = false;
+          showStairwellMap(entry);
+        });
+        stairwellMapMenu.appendChild(previewButton);
+      });
+      document.addEventListener("click", (event) => {
+        if (
+          historicalMapPicker.open &&
+          !historicalMapPicker.contains(event.target)
+        ) {
+          historicalMapPicker.open = false;
+        }
+        if (
+          stairwellMapPicker.open &&
+          !stairwellMapPicker.contains(event.target)
+        ) {
+          stairwellMapPicker.open = false;
+        }
+      });
+      storyLocations.forEach((story) => {
+        const option = document.createElement("option");
+        option.value = story.id;
+        option.textContent = story.title + " — " + story.location;
+        storyMapSelect.appendChild(option);
+      });
+      if (rumseyCatalog.length) {
+        const collectionGroup = document.createElement("optgroup");
+        collectionGroup.label = "Rumsey KMZ collection";
+        rumseyCatalog.forEach((entry) => {
+          const option = document.createElement("option");
+          option.value = entry.id;
+          option.textContent = entry.name;
+          collectionGroup.appendChild(option);
+        });
+        historicalMapSelect.appendChild(collectionGroup);
+      }
+
+      document
+        .getElementById("basemap-select")
+        .addEventListener("change", (event) => {
+          const selectedBasemap = event.target.value;
+          const basemapVisibility = {
+            "openstreetmap-basemap": selectedBasemap === "streets",
+            "opentopomap-basemap": selectedBasemap === "terrain",
+            "satellite-basemap": ["satellite", "satellite-labels"].includes(
+              selectedBasemap,
+            ),
+            "satellite-labels-basemap": selectedBasemap === "satellite-labels",
+          };
+          Object.entries(basemapVisibility).forEach(([layerId, visible]) => {
+            map.setLayoutProperty(
+              layerId,
+              "visibility",
+              visible ? "visible" : "none",
+            );
+          });
+        });
+
+      const terrainToggle = document.getElementById("terrain-toggle");
+
+      function setTerrainEnabled(enabled) {
+        terrainToggle.checked = enabled;
+        map.setTerrain(
+          enabled
+            ? {
+                source: "terrain-dem",
+                exaggeration: 1.25,
+              }
+            : null,
+        );
+      }
+
+      terrainToggle.addEventListener("change", (event) => {
+        setTerrainEnabled(event.target.checked);
+      });
+
+      const compassDial = document.getElementById("compass-dial");
+      const northNode = document.getElementById("north-node");
+      const tiltControl = document.getElementById("tilt-control");
+      const tiltHandle = document.getElementById("tilt-handle");
+      let compassDragging = false;
+      let tiltDragging = false;
+
+      function updateCompassNode() {
+        const bearing = map.getBearing();
+        const angle = (-bearing * Math.PI) / 180;
+        const center = compassDial.clientWidth / 2;
+        const radius = center - 12;
+        northNode.style.left = center + Math.sin(angle) * radius + "px";
+        northNode.style.top = center - Math.cos(angle) * radius + "px";
+        compassDial.dataset.bearing = String(Math.round(bearing));
+      }
+
+      function setBearingFromPointer(event) {
+        const bounds = compassDial.getBoundingClientRect();
+        const dx = event.clientX - (bounds.left + bounds.width / 2);
+        const dy = event.clientY - (bounds.top + bounds.height / 2);
+        const nodeAngle = (Math.atan2(dx, -dy) * 180) / Math.PI;
+        map.setBearing(-nodeAngle);
+      }
+
+      northNode.addEventListener("pointerdown", (event) => {
+        event.stopPropagation();
+        compassDragging = true;
+        spinEnabled = false;
+        updateRotationButton();
+        northNode.setPointerCapture(event.pointerId);
+        setBearingFromPointer(event);
+      });
+      northNode.addEventListener("pointermove", (event) => {
+        if (compassDragging) setBearingFromPointer(event);
+      });
+      northNode.addEventListener("pointerup", (event) => {
+        compassDragging = false;
+        northNode.releasePointerCapture(event.pointerId);
+      });
+      northNode.addEventListener("pointercancel", () => {
+        compassDragging = false;
+      });
+      northNode.addEventListener("dblclick", (event) => {
+        event.stopPropagation();
+        map.easeTo({ bearing: 0, duration: 600 });
+      });
+      compassDial.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+          event.preventDefault();
+          const direction = event.key === "ArrowLeft" ? -1 : 1;
+          map.easeTo({ bearing: map.getBearing() + direction * 5, duration: 100 });
+        } else if (event.key === "Home") {
+          event.preventDefault();
+          map.easeTo({ bearing: 0, duration: 600 });
+        }
+      });
+
+      function updateTiltHandle() {
+        const pitch = Math.min(75, Math.max(0, map.getPitch()));
+        const trackTop = 30;
+        const trackBottom = tiltControl.clientHeight - 12;
+        const top = trackBottom - (pitch / 75) * (trackBottom - trackTop);
+        tiltHandle.style.top = top + "px";
+        tiltControl.setAttribute("aria-valuenow", String(Math.round(pitch)));
+      }
+
+      function setPitchFromPointer(event) {
+        const bounds = tiltControl.getBoundingClientRect();
+        const trackTop = 30;
+        const trackBottom = bounds.height - 12;
+        const y = Math.min(
+          trackBottom,
+          Math.max(trackTop, event.clientY - bounds.top),
+        );
+        const pitch = ((trackBottom - y) / (trackBottom - trackTop)) * 75;
+        map.setPitch(pitch);
+      }
+
+      tiltHandle.addEventListener("pointerdown", (event) => {
+        event.stopPropagation();
+        tiltDragging = true;
+        spinEnabled = false;
+        updateRotationButton();
+        tiltHandle.setPointerCapture(event.pointerId);
+        setPitchFromPointer(event);
+      });
+      tiltHandle.addEventListener("pointermove", (event) => {
+        if (tiltDragging) setPitchFromPointer(event);
+      });
+      tiltHandle.addEventListener("pointerup", (event) => {
+        tiltDragging = false;
+        tiltHandle.releasePointerCapture(event.pointerId);
+      });
+      tiltHandle.addEventListener("pointercancel", () => {
+        tiltDragging = false;
+      });
+      tiltHandle.addEventListener("dblclick", (event) => {
+        event.stopPropagation();
+        map.easeTo({ pitch: 0, duration: 600 });
+      });
+      tiltControl.addEventListener("click", (event) => {
+        if (event.target !== tiltHandle) setPitchFromPointer(event);
+      });
+      tiltControl.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+          event.preventDefault();
+          const direction = event.key === "ArrowUp" ? 1 : -1;
+          const pitch = Math.min(75, Math.max(0, map.getPitch() + direction * 5));
+          map.easeTo({ pitch, duration: 100 });
+        } else if (event.key === "Home") {
+          event.preventDefault();
+          map.easeTo({ pitch: 0, duration: 600 });
+        }
+      });
+      map.on("rotate", updateCompassNode);
+      map.on("pitch", updateTiltHandle);
+      updateCompassNode();
+      updateTiltHandle();
 
       // Add menu sidebar
       function toggleSidebar(id) {
@@ -249,19 +1754,31 @@
           duration: 1000,
         });
       }
-      // Add a popup to indicate DRMC location
-      const popup = new mapboxgl.Popup({ closeOnClick: false })
+      window.toggleSidebar = toggleSidebar;
+      // Add a geographic marker and popup for the DRMC location.
+      const drmcPopup = new maplibregl.Popup({
+        closeButton: false,
+        closeOnClick: false,
+        offset: 28,
+      }).setHTML("<strong>We are Here</strong>");
+      const drmcMarker = new maplibregl.Marker({ color: "#b5121b" })
         .setLngLat([-122.16753571848874, 37.42701863544274])
-        .setHTML("<h1>We are Here</h1>")
+        .setPopup(drmcPopup)
         .addTo(map);
+      drmcMarker.togglePopup();
       // Activate Reset Button
       document.getElementById("reset").addEventListener("click", () => {
         location.reload();
       });
       // Add side bar navigation control
-      map.addControl(new mapboxgl.NavigationControl());
-      map.addControl(new mapboxgl.FullscreenControl());
-      map.addControl(new mapboxgl.GeolocateControl());
+      map.addControl(
+        new maplibregl.NavigationControl({
+          showCompass: false,
+          showZoom: false,
+        }),
+      );
+      map.addControl(new maplibregl.FullscreenControl());
+      map.addControl(new maplibregl.GeolocateControl());
       /*
       // Add Map styles control and info control
       const mapStyleBg = document.getElementById("map-styles-bg");
@@ -311,27 +1828,13 @@
       }
       */
       // Add Scale bar at the bottom left
-      map.addControl(new mapboxgl.ScaleControl());
-
-      // Set the atmosphere style and terrain exaggeration
-      map.on("style.load", () => {
-        map.setFog({
-          range: [0.8, 20],
-          color: "white",
-          "horizon-blend": 0.2,
-        });
-        map.addSource("mapbox-dem", {
-          type: "raster-dem",
-          url: "mapbox://mapbox.terrain-rgb",
-        });
-        map.setTerrain({
-          source: "mapbox-dem",
-          exaggeration: 2,
-        });
-      });
+      map.addControl(new maplibregl.ScaleControl());
 
       // Event listener for Initial state (everything that needs to be loaded before the map is interacted with)
+      const historicalLayersEnabled = true;
       map.on("load", () => {
+        if (!historicalLayersEnabled) return;
+
         // Add georeferenced overlay of U.S. Coast Survey City of SF Map from 1853
         map.addSource("USCoastSurveySF1853", {
           type: "raster",
@@ -339,43 +1842,392 @@
             "https://allmaps.xyz/images/cbff2fe43856f02b/{z}/{x}/{y}@2x.png",
           ],
           tileSize: 256,
+          minzoom: 0,
+          maxzoom: 20,
+          attribution:
+            '<a href="https://www.davidrumsey.com/luna/servlet/detail/RUMSEY~8~1~2210~180022">David Rumsey Map Collection</a>',
         });
         map.addLayer({
           id: "historical-overlay",
           source: "USCoastSurveySF1853",
           type: "raster",
+          layout: {
+            visibility: "none",
+          },
+          paint: {
+            "raster-opacity": 0.75,
+            "raster-fade-duration": 0,
+          },
         });
-        // Add georeferenced overlayer of USGS Survey of 1883 Yosemite
-        map.addSource("USGSSurveyYosemite1883", {
+
+        // Add the georeferenced 1929 map of San Francisco Chinatown.
+        map.addSource("SFChinatown1929", {
+          type: "image",
+          url: "https://stacks.stanford.edu/image/iiif/pt740jp0404%2FSFChinatown_wgs84/full/2998,/0/default.png",
+          coordinates: [
+            [-122.41033213925, 37.7982284545],
+            [-122.40231069045, 37.7982284545],
+            [-122.40231069045, 37.7900572929],
+            [-122.41033213925, 37.7900572929],
+          ],
+        });
+        map.addLayer({
+          id: "chinatown-overlay",
+          source: "SFChinatown1929",
+          type: "raster",
+          layout: {
+            visibility: "none",
+          },
+          paint: {
+            "raster-opacity": 0.75,
+            "raster-fade-duration": 0,
+          },
+        });
+
+        // Add the georeferenced 1883 Yosemite topographical map.
+        map.addSource("Yosemite1883", {
           type: "raster",
           tiles: [
             "https://allmaps.xyz/manifests/6a784e8edcc336e8/{z}/{x}/{y}@2x.png",
           ],
           tileSize: 256,
+          minzoom: 0,
+          maxzoom: 20,
+          attribution:
+            '<a href="https://www.davidrumsey.com/luna/servlet/detail/RUMSEY~8~1~405~40014">David Rumsey Map Collection</a>',
         });
         map.addLayer({
-          id: "historical-overlay2",
-          source: "USGSSurveyYosemite1883",
+          id: "yosemite-overlay",
+          source: "Yosemite1883",
           type: "raster",
+          layout: {
+            visibility: "none",
+          },
+          paint: {
+            "raster-opacity": 0.75,
+            "raster-fade-duration": 0,
+          },
         });
-        //Add the menu sidebar to toggle
-        toggleSidebar("left");
+
+        const featuredMapPins = [
+          {
+            id: "sf1853",
+            name: "1853 San Francisco",
+            center: [-122.405, 37.796],
+          },
+          {
+            id: "chinatown1929",
+            name: "1929 Chinatown",
+            center: [-122.4063214, 37.7941429],
+          },
+          {
+            id: "yosemite1883",
+            name: "1883 Yosemite",
+            center: [-119.6188, 37.7355],
+          },
+        ];
+        const allMapPins = [
+          ...featuredMapPins,
+          ...rumseyCatalog.map((entry) => ({
+            id: entry.id,
+            name: entry.name,
+            center: entry.center,
+          })),
+        ];
+        map.addSource("historical-map-pins", {
+          type: "geojson",
+          data: {
+            type: "FeatureCollection",
+            features: allMapPins.map((entry) => ({
+              type: "Feature",
+              geometry: {
+                type: "Point",
+                coordinates: entry.center,
+              },
+              properties: {
+                mapId: entry.id,
+                name: entry.name,
+                label: condensedMapTitle(entry.name),
+              },
+            })),
+          },
+        });
+        map.addLayer({
+          id: "historical-map-pin-halos",
+          type: "circle",
+          source: "historical-map-pins",
+          paint: {
+            "circle-radius": 7,
+            "circle-color": "#ffffff",
+            "circle-opacity": 0.92,
+          },
+        });
+        map.addLayer({
+          id: "historical-map-pins",
+          type: "circle",
+          source: "historical-map-pins",
+          paint: {
+            "circle-radius": 4.5,
+            "circle-color": "#b5121b",
+            "circle-stroke-color": "#6f0710",
+            "circle-stroke-width": 1,
+          },
+        });
+        map.addLayer({
+          id: "historical-map-pin-labels",
+          type: "symbol",
+          source: "historical-map-pins",
+          minzoom: 3,
+          layout: {
+            "text-field": ["get", "label"],
+            "text-font": ["Noto Sans Regular"],
+            "text-size": 11,
+            "text-anchor": "bottom",
+            "text-offset": [0, -0.9],
+            "text-max-width": 12,
+            "text-allow-overlap": false,
+          },
+          paint: {
+            "text-color": "#351014",
+            "text-halo-color": "rgba(255,255,255,0.95)",
+            "text-halo-width": 2,
+          },
+        });
+
+        const pinPopup = new maplibregl.Popup({
+          closeButton: false,
+          closeOnClick: false,
+          offset: 10,
+        });
+        map.on("mouseenter", "historical-map-pins", (event) => {
+          map.getCanvas().style.cursor = "pointer";
+          const feature = event.features?.[0];
+          if (!feature) return;
+          pinPopup
+            .setLngLat(feature.geometry.coordinates)
+            .setText(feature.properties.name)
+            .addTo(map);
+        });
+        map.on("mouseleave", "historical-map-pins", () => {
+          map.getCanvas().style.cursor = "grab";
+          pinPopup.remove();
+        });
+        map.on("click", "historical-map-pins", (event) => {
+          const feature = event.features?.[0];
+          const mapId = feature?.properties?.mapId;
+          if (!mapId) return;
+          pinPopup.remove();
+          const details =
+            featuredMapDetails[mapId] ||
+            rumseyCatalog.find((entry) => entry.id === mapId);
+          if (details) {
+            showDetailsPopup(details, feature.geometry.coordinates);
+          }
+          historicalMapSelect.value = mapId;
+          historicalMapSelect.dispatchEvent(new Event("change"));
+        });
+
+        map.addSource("story-location-pins", {
+          type: "geojson",
+          data: {
+            type: "FeatureCollection",
+            features: storyLocations.map((story) => ({
+              type: "Feature",
+              geometry: {
+                type: "Point",
+                coordinates: story.center,
+              },
+              properties: {
+                storyId: story.id,
+                title: story.title,
+                label: condensedMapTitle(story.title),
+              },
+            })),
+          },
+        });
+        map.addLayer({
+          id: "story-location-pin-halos",
+          type: "circle",
+          source: "story-location-pins",
+          paint: {
+            "circle-radius": 10,
+            "circle-color": "#ffffff",
+            "circle-opacity": 0.95,
+          },
+        });
+        map.addLayer({
+          id: "story-location-pins",
+          type: "circle",
+          source: "story-location-pins",
+          paint: {
+            "circle-radius": 7,
+            "circle-color": "#6f42c1",
+            "circle-stroke-color": "#3d2374",
+            "circle-stroke-width": 1.5,
+          },
+        });
+        map.addLayer({
+          id: "story-location-pin-labels",
+          type: "symbol",
+          source: "story-location-pins",
+          layout: {
+            "text-field": ["get", "label"],
+            "text-font": ["Noto Sans Regular"],
+            "text-size": 12,
+            "text-anchor": "bottom",
+            "text-offset": [0, -1.2],
+            "text-max-width": 14,
+            "text-allow-overlap": false,
+          },
+          paint: {
+            "text-color": "#3d2374",
+            "text-halo-color": "rgba(255,255,255,0.96)",
+            "text-halo-width": 2,
+          },
+        });
+        const storyPopup = new maplibregl.Popup({
+          closeButton: false,
+          closeOnClick: false,
+          offset: 12,
+        });
+        map.on("mouseenter", "story-location-pins", (event) => {
+          map.getCanvas().style.cursor = "pointer";
+          const feature = event.features?.[0];
+          if (!feature) return;
+          storyPopup
+            .setLngLat(feature.geometry.coordinates)
+            .setText(feature.properties.title)
+            .addTo(map);
+        });
+        map.on("mouseleave", "story-location-pins", () => {
+          map.getCanvas().style.cursor = "grab";
+          storyPopup.remove();
+        });
+        map.on("click", "story-location-pins", (event) => {
+          const feature = event.features?.[0];
+          const storyId = feature?.properties?.storyId;
+          if (!storyId) return;
+          storyPopup.remove();
+          const story = storyLocations.find((entry) => entry.id === storyId);
+          if (story) {
+            showDetailsPopup(story, feature.geometry.coordinates, true);
+          }
+          storyMapSelect.value = storyId;
+          storyMapSelect.dispatchEvent(new Event("change"));
+        });
+
+        map.addSource("stairwell-map-pins", {
+          type: "geojson",
+          data: {
+            type: "FeatureCollection",
+            features: stairwellMaps.map((entry) => ({
+              type: "Feature",
+              geometry: {
+                type: "Point",
+                coordinates: entry.center,
+              },
+              properties: {
+                stairwellId: entry.id,
+                title: entry.title,
+                label: condensedMapTitle(entry.title),
+              },
+            })),
+          },
+        });
+        map.addLayer({
+          id: "stairwell-map-pin-halos",
+          type: "circle",
+          source: "stairwell-map-pins",
+          paint: {
+            "circle-radius": 14,
+            "circle-color": "#ffffff",
+            "circle-opacity": 0.96,
+          },
+        });
+        map.addLayer({
+          id: "stairwell-map-pins",
+          type: "circle",
+          source: "stairwell-map-pins",
+          paint: {
+            "circle-radius": 10,
+            "circle-color": "#008c95",
+            "circle-stroke-color": "#004f55",
+            "circle-stroke-width": 2,
+          },
+        });
+        map.addLayer({
+          id: "stairwell-map-pin-labels",
+          type: "symbol",
+          source: "stairwell-map-pins",
+          layout: {
+            "text-field": ["get", "label"],
+            "text-font": ["Noto Sans Regular"],
+            "text-size": 13,
+            "text-anchor": "bottom",
+            "text-offset": [0, -1.45],
+            "text-max-width": 15,
+            "text-allow-overlap": false,
+          },
+          paint: {
+            "text-color": "#004f55",
+            "text-halo-color": "rgba(255,255,255,0.97)",
+            "text-halo-width": 2.2,
+          },
+        });
+        const stairwellPopup = new maplibregl.Popup({
+          closeButton: false,
+          closeOnClick: false,
+          offset: 16,
+        });
+        map.on("mouseenter", "stairwell-map-pins", (event) => {
+          map.getCanvas().style.cursor = "pointer";
+          const feature = event.features?.[0];
+          if (!feature) return;
+          stairwellPopup
+            .setLngLat(feature.geometry.coordinates)
+            .setText(feature.properties.title)
+            .addTo(map);
+        });
+        map.on("mouseleave", "stairwell-map-pins", () => {
+          map.getCanvas().style.cursor = "grab";
+          stairwellPopup.remove();
+        });
+        map.on("click", "stairwell-map-pins", (event) => {
+          const feature = event.features?.[0];
+          const stairwellId = feature?.properties?.stairwellId;
+          if (!stairwellId) return;
+          stairwellPopup.remove();
+          const entry = stairwellMaps.find(
+            (item) => item.id === stairwellId,
+          );
+          if (!entry) return;
+          showStairwellMap(entry, feature.geometry.coordinates);
+        });
+
+        document.getElementById("historical-map-select").disabled = false;
       });
 
       // Add an event listener for the transparency slider.
       const slider = document.getElementById("slider");
       const sliderValue = document.getElementById("slider-value");
+      const sliderLabelText = document.getElementById("slider-label-text");
+      const historicalCredit = document.getElementById("historical-credit");
+      let activeHistoricalLayers = ["historical-overlay"];
+      let catalogOverlayLayerIds = [];
+      let activeCatalogEntry = null;
+      if (!historicalLayersEnabled) {
+        document.querySelector(".map-overlay").hidden = true;
+      }
       slider.addEventListener("input", (e) => {
-        map.setPaintProperty(
-          "historical-overlay",
-          "raster-opacity",
-          parseInt(e.target.value, 10) / 100,
-        );
-        map.setPaintProperty(
-          "historical-overlay2",
-          "raster-opacity",
-          parseInt(e.target.value, 10) / 100,
-        );
+        activeHistoricalLayers.forEach((layerId) => {
+          if (map.getLayer(layerId)) {
+            map.setPaintProperty(
+              layerId,
+              "raster-opacity",
+              parseInt(e.target.value, 10) / 100,
+            );
+          }
+        });
         sliderValue.textContent = e.target.value + "%"; // Value indicator
       });
 
@@ -383,10 +2235,43 @@
       const secondsPerRevolution = 150;
       const maxSpinZoom = 5;
       const slowSpinZoom = 3;
-      const spinEnabled = true;
+      let spinEnabled = true;
 
       // Allow for Any Map Interaction
       let userInteracting = false;
+      let isReturningToGlobe = false;
+      const rotationButton = document.getElementById("toggle-rotation");
+
+      function updateRotationButton() {
+        rotationButton.textContent = spinEnabled
+          ? "Pause rotation"
+          : "Resume rotation";
+        rotationButton.setAttribute("aria-pressed", String(!spinEnabled));
+      }
+
+      rotationButton.addEventListener("click", () => {
+        spinEnabled = !spinEnabled;
+        updateRotationButton();
+
+        if (spinEnabled) {
+          userInteracting = false;
+          if (map.getZoom() > initialState.zoom + 0.1) {
+            isReturningToGlobe = true;
+            setTerrainEnabled(false);
+            map.setProjection({ type: "globe" });
+            map.flyTo({
+              ...initialState,
+              duration: 6000,
+              essential: true,
+            });
+          } else {
+            spinGlobe();
+          }
+        } else {
+          isReturningToGlobe = false;
+          map.stop();
+        }
+      });
 
       // Spinning the Globe
       function spinGlobe() {
@@ -406,29 +2291,497 @@
         userInteracting = true;
       });
       map.on("dragstart", () => {
+        spinEnabled = false;
         userInteracting = true;
+        updateRotationButton();
+      });
+      map.on("mouseup", () => {
+        userInteracting = false;
+      });
+      map.on("dragend", () => {
+        userInteracting = false;
+      });
+      map.on("touchend", () => {
+        userInteracting = false;
+      });
+      map.on("zoomstart", () => {
+        if (isReturningToGlobe) return;
+        spinEnabled = false;
+        userInteracting = true;
+        updateRotationButton();
+      });
+      map.on("zoomend", () => {
+        userInteracting = false;
+        isReturningToGlobe = false;
+      });
+      map.on("rotatestart", () => {
+        if (isReturningToGlobe) return;
+        spinEnabled = false;
+        userInteracting = true;
+        updateRotationButton();
+      });
+      map.on("rotateend", () => {
+        userInteracting = false;
       });
       map.on("moveend", () => {
         spinGlobe();
       });
       spinGlobe();
 
-      // Fly to SF Button
-      let isAtStart = true;
+      // Historical-map navigation buttons
       const SFcenter = {
-        center: [-122.39194543787394, 37.76819361924776],
-        zoom: 12,
-        bearing: 130,
-        pitch: 75,
+        center: [-122.405, 37.796],
+        zoom: 14.5,
+        bearing: 0,
+        pitch: 0,
       };
-      document.getElementById("flytoSF").addEventListener("click", () => {
-        const target = isAtStart ? SFcenter : spinGlobe();
-        isAtStart = !isAtStart;
+      const ChinatownCenter = {
+        center: [-122.40632141485, 37.7941428737],
+        zoom: 15.5,
+        bearing: 0,
+        pitch: 0,
+      };
+      const YosemiteCenter = {
+        center: [-119.6188, 37.7355],
+        zoom: 12,
+        bearing: -25,
+        pitch: 65,
+      };
+
+      function removeCatalogOverlayLayers() {
+        catalogOverlayLayerIds.forEach((layerId) => {
+          if (map.getLayer(layerId)) map.removeLayer(layerId);
+          const sourceId = layerId + "-source";
+          if (map.getSource(sourceId)) map.removeSource(sourceId);
+        });
+        catalogOverlayLayerIds = [];
+      }
+
+      function clearCatalogOverlays() {
+        activeCatalogEntry = null;
+        removeCatalogOverlayLayers();
+      }
+
+      function overlayIntersectsViewport(overlay) {
+        const bounds = map.getBounds();
+        if (!bounds) return true;
+        const longitudes = overlay.coordinates.map(([longitude]) => longitude);
+        const latitudes = overlay.coordinates.map(([, latitude]) => latitude);
+        const overlayWest = Math.min(...longitudes);
+        const overlayEast = Math.max(...longitudes);
+        const overlaySouth = Math.min(...latitudes);
+        const overlayNorth = Math.max(...latitudes);
+        const viewWest = bounds.getWest();
+        const viewEast = bounds.getEast();
+        const viewSouth = bounds.getSouth();
+        const viewNorth = bounds.getNorth();
+        const longitudePadding = Math.min(30, Math.abs(viewEast - viewWest) * 0.3);
+        const latitudePadding = Math.min(15, Math.abs(viewNorth - viewSouth) * 0.3);
+        const latitudeVisible =
+          overlayNorth >= viewSouth - latitudePadding &&
+          overlaySouth <= viewNorth + latitudePadding;
+        if (!latitudeVisible || Math.abs(viewEast - viewWest) >= 350) {
+          return latitudeVisible;
+        }
+        if (viewWest <= viewEast) {
+          return (
+            overlayEast >= viewWest - longitudePadding &&
+            overlayWest <= viewEast + longitudePadding
+          );
+        }
+        return (
+          overlayEast >= viewWest - longitudePadding ||
+          overlayWest <= viewEast + longitudePadding
+        );
+      }
+
+      function addCatalogRasterLayer(layerId, source) {
+        map.addSource(layerId + "-source", source);
+        map.addLayer(
+          {
+            id: layerId,
+            type: "raster",
+            source: layerId + "-source",
+            paint: {
+              "raster-opacity": parseInt(slider.value, 10) / 100,
+              "raster-fade-duration": 0,
+            },
+          },
+          map.getLayer("historical-map-pin-halos")
+            ? "historical-map-pin-halos"
+            : undefined,
+        );
+        catalogOverlayLayerIds.push(layerId);
+        activeHistoricalLayers.push(layerId);
+      }
+
+      function overlayDistanceFromTarget(overlay, target) {
+        const coordinates = Array.isArray(overlay.coordinates)
+          ? overlay.coordinates
+          : [];
+        if (!coordinates.length) return Number.POSITIVE_INFINITY;
+        const longitude =
+          coordinates.reduce((sum, point) => sum + point[0], 0) /
+          coordinates.length;
+        const latitude =
+          coordinates.reduce((sum, point) => sum + point[1], 0) /
+          coordinates.length;
+        return (longitude - target[0]) ** 2 + (latitude - target[1]) ** 2;
+      }
+
+      function renderCatalogOverlays(entry, initialRender = false) {
+        if (activeCatalogEntry?.id !== entry.id) return;
+        removeCatalogOverlayLayers();
+        activeHistoricalLayers = [];
+
+        if (entry.georeferencerTiles) {
+          addCatalogRasterLayer("catalog-georeferencer", {
+            type: "raster",
+            tiles: [entry.georeferencerTiles],
+            tileSize: 256,
+            minzoom: entry.georeferencerMinZoom ?? 0,
+            maxzoom: entry.georeferencerMaxZoom ?? 20,
+            attribution: "David Rumsey Map Collection / Georeferencer",
+          });
+          return;
+        }
+
+        const useDetailLevel =
+          Array.isArray(entry.detailOverlays) &&
+          entry.detailOverlays.length > 0 &&
+          map.getZoom() >= (entry.detailMinZoom ?? 8);
+        const overlays = useDetailLevel
+          ? entry.detailOverlays
+          : Array.isArray(entry.overlays)
+            ? entry.overlays
+            : [];
+        let visibleOverlays = overlays.map((overlay, index) => ({
+          overlay,
+          index,
+        }));
+        if (initialRender) {
+          visibleOverlays.sort(
+            (first, second) =>
+              overlayDistanceFromTarget(first.overlay, entry.center) -
+              overlayDistanceFromTarget(second.overlay, entry.center),
+          );
+          visibleOverlays = visibleOverlays.slice(0, 36);
+        } else {
+          visibleOverlays = visibleOverlays.filter(({ overlay }) =>
+            overlayIntersectsViewport(overlay),
+          );
+          if (visibleOverlays.length > 96) {
+            const viewportCenter = map.getCenter();
+            visibleOverlays.sort(
+              (first, second) =>
+                overlayDistanceFromTarget(first.overlay, [
+                  viewportCenter.lng,
+                  viewportCenter.lat,
+                ]) -
+                overlayDistanceFromTarget(second.overlay, [
+                  viewportCenter.lng,
+                  viewportCenter.lat,
+                ]),
+            );
+            visibleOverlays = visibleOverlays.slice(0, 96);
+          }
+        }
+        if (!visibleOverlays.length && overlays.length) {
+          visibleOverlays = overlays
+            .map((overlay, index) => ({ overlay, index }))
+            .sort(
+              (first, second) =>
+                overlayDistanceFromTarget(first.overlay, entry.center) -
+                overlayDistanceFromTarget(second.overlay, entry.center),
+            )
+            .slice(0, 4);
+        }
+        visibleOverlays.forEach(({ overlay, index }) => {
+          addCatalogRasterLayer("catalog-overlay-" + index, {
+            type: "image",
+            url: overlay.url,
+            coordinates: overlay.coordinates,
+          });
+        });
+      }
+
+      const clearMapButton = document.getElementById("clear-map");
+
+      function clearDisplayedMap() {
+        detailsPopup.remove();
+        clearCatalogOverlays();
+        ["historical-overlay", "chinatown-overlay", "yosemite-overlay"].forEach(
+          (id) => {
+            if (map.getLayer(id)) {
+              map.setLayoutProperty(id, "visibility", "none");
+            }
+          },
+        );
+        activeHistoricalLayers = [];
+        resetHistoricalPicker();
+        resetStairwellPicker();
+        storyMapSelect.selectedIndex = 0;
+        document.querySelector(".map-overlay").hidden = true;
+        document.querySelector(".map-overlay-inner").style.borderLeft = "";
+        clearMapButton.hidden = true;
+      }
+
+      clearMapButton.addEventListener("click", clearDisplayedMap);
+
+      function showHistoricalMap(
+        layerId,
+        label,
+        creditHtml,
+        target,
+        useTerrain = false,
+      ) {
+        document.querySelector(".map-overlay").hidden = false;
+        clearMapButton.hidden = false;
+        document.querySelector(".map-overlay-inner").style.borderLeft = "";
+        slider.disabled = false;
+        slider.style.display = "";
+        sliderValue.hidden = false;
+        resetStairwellPicker();
+        storyMapSelect.selectedIndex = 0;
+        clearCatalogOverlays();
+        spinEnabled = false;
+        userInteracting = false;
+        isReturningToGlobe = false;
+        updateRotationButton();
+        map.stop();
+        ["historical-overlay", "chinatown-overlay", "yosemite-overlay"].forEach(
+          (id) => map.setLayoutProperty(id, "visibility", "none"),
+        );
+        setTerrainEnabled(false);
+        map.setProjection({ type: useTerrain ? "globe" : "mercator" });
+        activeHistoricalLayers = [layerId];
+        sliderLabelText.textContent = label + " opacity";
+        historicalCredit.innerHTML = creditHtml;
+        map.setPaintProperty(
+          layerId,
+          "raster-opacity",
+          parseInt(slider.value, 10) / 100,
+        );
+
+        if (useTerrain) {
+          // Avoid downloading large historical and elevation tiles throughout
+          // a globe-to-Yosemite animation. Move first, then add terrain and
+          // reveal the historical overlay once the new frame is ready.
+          map.jumpTo(target);
+          window.requestAnimationFrame(() => {
+            if (activeHistoricalLayers.includes(layerId)) {
+              setTerrainEnabled(true);
+              window.setTimeout(() => {
+                if (activeHistoricalLayers.includes(layerId)) {
+                  map.setLayoutProperty(layerId, "visibility", "visible");
+                }
+              }, 400);
+            }
+          });
+          return;
+        }
+
+        map.setLayoutProperty(layerId, "visibility", "visible");
         map.flyTo({
           ...target,
-          duration: 12000,
+          duration: 6000,
           essential: true,
         });
+      }
+
+      function showCatalogMap(entry) {
+        document.querySelector(".map-overlay").hidden = false;
+        document.querySelector(".map-overlay-inner").style.borderLeft = "";
+        resetStairwellPicker();
+        storyMapSelect.selectedIndex = 0;
+        clearCatalogOverlays();
+        const overlays = Array.isArray(entry.overlays) ? entry.overlays : [];
+        const hasOfficialTiles = Boolean(entry.georeferencerTiles);
+        const hasMap = hasOfficialTiles || overlays.length > 0;
+        clearMapButton.hidden = !hasMap;
+        slider.disabled = !hasMap;
+        slider.style.display = hasMap ? "" : "none";
+        sliderValue.hidden = !hasMap;
+        sliderLabelText.textContent =
+          entry.name + (hasMap ? " opacity" : "");
+        const officialRecordUrl =
+          entry.georeferencerUrl || entry.sourceUrl ||
+          "https://www.davidrumsey.com/view/georeferencer";
+        historicalCredit.innerHTML =
+          '<a href="' +
+          officialRecordUrl.replaceAll('"', "&quot;") +
+          '" target="_blank" rel="noopener">' +
+          (hasOfficialTiles
+            ? "Official David Rumsey Georeferencer tiles"
+            : "David Rumsey record · cached georeference fallback") +
+          "</a>";
+        spinEnabled = false;
+        userInteracting = false;
+        isReturningToGlobe = false;
+        updateRotationButton();
+        map.stop();
+        ["historical-overlay", "chinatown-overlay", "yosemite-overlay"].forEach(
+          (id) => map.setLayoutProperty(id, "visibility", "none"),
+        );
+        setTerrainEnabled(false);
+        map.setProjection({ type: "globe" });
+        activeCatalogEntry = entry;
+        if (hasMap) renderCatalogOverlays(entry, true);
+        showDetailsPopup(entry, entry.center);
+        map.flyTo({
+          center: entry.center,
+          zoom: entry.zoom,
+          bearing: 0,
+          pitch: 0,
+          duration: 4500,
+          essential: true,
+        });
+      }
+
+      map.on("moveend", () => {
+        if (activeCatalogEntry && !activeCatalogEntry.georeferencerTiles) {
+          renderCatalogOverlays(activeCatalogEntry);
+        }
+      });
+
+      function showStoryLocation(story) {
+        resetHistoricalPicker();
+        resetStairwellPicker();
+        clearCatalogOverlays();
+        ["historical-overlay", "chinatown-overlay", "yosemite-overlay"].forEach(
+          (id) => map.setLayoutProperty(id, "visibility", "none"),
+        );
+        activeHistoricalLayers = [];
+        clearMapButton.hidden = true;
+        document.querySelector(".map-overlay").hidden = false;
+        document.querySelector(".map-overlay-inner").style.borderLeft =
+          "6px solid #6f42c1";
+        slider.disabled = true;
+        slider.style.display = "none";
+        sliderValue.hidden = true;
+        sliderLabelText.textContent = story.title + " — " + story.location;
+        historicalCredit.innerHTML =
+          '<a href="' +
+          story.url.replaceAll('"', "&quot;") +
+          '" target="_blank" rel="noopener">Open ArcGIS StoryMap</a>';
+        spinEnabled = false;
+        userInteracting = false;
+        isReturningToGlobe = false;
+        updateRotationButton();
+        map.stop();
+        setTerrainEnabled(false);
+        map.setProjection({ type: "globe" });
+        map.flyTo({
+          center: story.center,
+          zoom: story.zoom,
+          bearing: 0,
+          pitch: 25,
+          duration: 4500,
+          essential: true,
+        });
+      }
+
+      function showStairwellMap(entry, popupCoordinates = entry.center) {
+        stairwellMapSelect.value = entry.id;
+        stairwellMapSummary.textContent = condensedMapTitle(entry.title, 30);
+        stairwellMapPicker.open = false;
+        resetHistoricalPicker();
+        storyMapSelect.selectedIndex = 0;
+        clearCatalogOverlays();
+        ["historical-overlay", "chinatown-overlay", "yosemite-overlay"].forEach(
+          (id) => map.setLayoutProperty(id, "visibility", "none"),
+        );
+        activeHistoricalLayers = [];
+        clearMapButton.hidden = true;
+        document.querySelector(".map-overlay").hidden = false;
+        document.querySelector(".map-overlay-inner").style.borderLeft =
+          "6px solid #008c95";
+        slider.disabled = true;
+        slider.style.display = "none";
+        sliderValue.hidden = true;
+        sliderLabelText.textContent = entry.title;
+        historicalCredit.innerHTML =
+          '<a href="' +
+          entry.url.replaceAll('"', "&quot;") +
+          '" target="_blank" rel="noopener">Open David Rumsey record</a>';
+        spinEnabled = false;
+        userInteracting = false;
+        isReturningToGlobe = false;
+        updateRotationButton();
+        map.stop();
+        setTerrainEnabled(false);
+        map.setProjection({ type: "globe" });
+        showDetailsPopup(entry, popupCoordinates);
+        map.flyTo({
+          center: entry.center,
+          zoom: entry.zoom,
+          bearing: 0,
+          pitch: 20,
+          duration: 4500,
+          essential: true,
+        });
+      }
+
+      historicalMapSelect.addEventListener("change", (event) => {
+        const selectedEntry =
+          featuredMaps.find((entry) => entry.id === event.target.value) ||
+          rumseyCatalog.find((entry) => entry.id === event.target.value);
+        if (selectedEntry) {
+          historicalMapSummary.textContent = condensedMapTitle(
+            selectedEntry.title || selectedEntry.name,
+            30,
+          );
+          historicalMapPicker.open = false;
+        }
+        if (event.target.value === "sf1853") {
+            showHistoricalMap(
+              "historical-overlay",
+              "1853 map",
+              '<a href="https://www.davidrumsey.com/luna/servlet/detail/RUMSEY~8~1~2210~180022" target="_blank" rel="noopener">David Rumsey Map Collection</a>',
+              SFcenter,
+            );
+            showDetailsPopup(featuredMapDetails.sf1853, SFcenter.center);
+        } else if (event.target.value === "chinatown1929") {
+            showHistoricalMap(
+              "chinatown-overlay",
+              "1929 Chinatown map",
+              '<a href="https://purl.stanford.edu/pt740jp0404" target="_blank" rel="noopener">Stanford Libraries / J. P. Wong</a>',
+              ChinatownCenter,
+            );
+            showDetailsPopup(
+              featuredMapDetails.chinatown1929,
+              ChinatownCenter.center,
+            );
+        } else if (event.target.value === "yosemite1883") {
+            showHistoricalMap(
+              "yosemite-overlay",
+              "1883 Yosemite map",
+              '<a href="https://www.davidrumsey.com/luna/servlet/detail/RUMSEY~8~1~405~40014" target="_blank" rel="noopener">David Rumsey Map Collection</a>',
+              YosemiteCenter,
+              true,
+            );
+            showDetailsPopup(
+              featuredMapDetails.yosemite1883,
+              YosemiteCenter.center,
+            );
+        } else {
+          const catalogEntry = rumseyCatalog.find(
+            (entry) => entry.id === event.target.value,
+          );
+          if (catalogEntry) showCatalogMap(catalogEntry);
+        }
+      });
+      storyMapSelect.addEventListener("change", (event) => {
+        const story = storyLocations.find(
+          (entry) => entry.id === event.target.value,
+        );
+        if (story) showStoryLocation(story);
+      });
+      stairwellMapSelect.addEventListener("change", (event) => {
+        const entry = stairwellMaps.find(
+          (item) => item.id === event.target.value,
+        );
+        if (entry) showStairwellMap(entry);
       });
     </script>
   </body>

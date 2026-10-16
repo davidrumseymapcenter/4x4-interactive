@@ -1,0 +1,181 @@
+4x4 Interactive Web Map — Conversation Handoff
+Generated: October 9, 2026
+Project folder: /Users/jessiekong/Documents/GitHub/4x4-interactive
+Current Git branch: jessie
+
+PROJECT GOAL
+
+The user is building an interactive historical-map globe for the David Rumsey Map Center. They want a Google Earth-like globe with satellite imagery, 3D terrain, historical-map overlays, location pins, StoryMaps, catalog information, smooth navigation, and controls that are understandable without using a command line.
+
+CURRENT APPLICATION
+
+- Main page: index.html
+- Local URL: http://localhost:8000/index.html
+- The local web server was not running when this handoff was generated. Start a local server from the project folder before testing.
+- Map renderer: MapLibre GL JS 6.11.2 loaded from unpkg.
+- Default view: globe projection, satellite basemap, and 3D terrain.
+- Default UI font: Helvetica / Helvetica Neue / Arial fallback.
+- The user generally wants edits made directly rather than receiving instructions to make them manually.
+
+COMPLETED MAP AND INTERACTION WORK
+
+- Fixed the original blank-map and disappearing-map failures.
+- Removed reliance on maplibregl.supported(), which was unavailable in the imported MapLibre module.
+- Added globe rotation with a Pause rotation / Resume rotation button.
+- Dragging, zooming, rotating, or using the zoom control pauses automatic rotation.
+- Resuming rotation slowly returns the camera to the initial globe view before rotation continues.
+- The “We are Here” marker is geographically attached to the David Rumsey Map Center instead of remaining fixed on screen.
+- Added a dedicated compass at the bottom right. Dragging the red N node changes bearing. Double-clicking resets north up.
+- Added a separate blue tilt/orientation controller so compass direction and viewing angle are not mixed together.
+- Added touchpad and middle-mouse rotation/tilt interactions.
+- Added a classic vertical Google Maps-style zoom control with +, a draggable slider, and −. Dragging updates immediately and pauses rotation.
+- Added a Clear map button below the rotation button. It only appears while a historical overlay is present.
+- Added a dark sky/star-like background around the globe.
+- Place-to-place fly animations were slowed to about 4.5–6 seconds.
+
+BASEMAPS AND TERRAIN
+
+- Basemap choices are in the right slide-out menu:
+  - Streets / OpenStreetMap
+  - Terrain / OpenTopoMap
+  - Satellite
+  - Satellite + Labels
+- Satellite is the startup basemap.
+- 3D terrain is enabled by default using the MapTiler/Mapterhorn terrain source currently defined in index.html.
+- Satellite imagery and labels use Esri raster services.
+- OSM remains available because the user explicitly wanted it. Public OSM tiles may still return HTTP 403 in some preview/browser environments because of upstream access policies.
+- Map labels use OpenFreeMap glyphs with Noto Sans Regular. This replaced the previous demo glyph URL that returned 403.
+
+HISTORICAL MAPS — MAIN LIST
+
+- The top “See map…” dropdown retains the original three featured maps first:
+  1. 1853 San Francisco
+  2. 1929 Chinatown
+  3. 1883 Yosemite
+- The remaining imported David Rumsey KMZ collection follows in an option group.
+- rumsey-maps.js contains 203 imported maps.
+- All 203 entries now have a description/summary shown in their popup.
+- 198 entries currently have locally cached georeferenced overlay tiles in rumsey-previews/.
+- Selecting a main-list map or clicking its red pin now opens the same descriptive popup.
+- Popups show title, date, creator when known, subject/location, David Rumsey description, preview when available, and a source-record link.
+- The eight formerly blank descriptions were filled from official David Rumsey LUNA records: Rome Historical Lanciani, St. Vincent 1775, St. Lucia 1775, Argentina 1867, Brazil 1842, Peru 1865, England/Wales 1790, and Scotland 1790.
+- The featured San Francisco and Yosemite entries use official David Rumsey descriptions and high-resolution IIIF previews.
+- Chinatown is a Stanford/J. P. Wong map, so its Stanford metadata and link are retained rather than presenting it as a David Rumsey record.
+- Main imported map pins have condensed title labels above them.
+- Clicking a main pin displays its overlay and its metadata popup.
+- Overlay opacity is controlled by the existing slider.
+- Some source KML georeferencing may still be imperfect. The imported overlays retain the coordinates supplied through the David Rumsey/Google Earth KML sources. Do not invent placement coordinates for non-geographic illustrations.
+
+STAIRWELL MAPS
+
+- A separate “The Stairwell Maps…” control sits between the main map dropdown and StoryMap dropdown.
+- It is a custom thumbnail gallery rather than a native select, because native HTML dropdowns cannot reliably display image previews.
+- The gallery contains 10 maps:
+  1. Grand Canon at the Foot of the Toroweap
+  2. Composite: Sheets 1–8 Mapa Geografico de America Meridional
+  3. Afrique spheroidale
+  4. Paskaerte Van Nova Granada en t’Eylandt California
+  5. Utah Basin — Geological
+  6. Heights of the Principal Mountains in the World
+  7. Nanzenbushu bankoku shoka no zu
+  8. Plate 2: Cetus, Aquarius, Andromeda
+  9. New York City Picture Map
+  10. Dai Toa Koeiken meguri: Sugoroku
+- Gallery thumbnails use small David Rumsey IIIF requests to reduce loading cost.
+- Stairwell maps use larger teal pins and teal title labels, distinct from the main red pins and purple StoryMap pins.
+- Choosing a gallery thumbnail or clicking a teal pin produces the same result: fly to the representative location and open the detailed popup.
+- Popup images are clickable and open the full-resolution IIIF image in a new tab.
+- The popup explicitly tells the user that the preview can be clicked for the full-resolution map.
+- Popups include official title, date, creator, subject, description, catalog ID, the complete David Rumsey metadata inside an expandable section, and the official catalog link.
+- stairwell-maps.js stores official LUNA API metadata for all 10 maps.
+- import_stairwell_metadata.py regenerates stairwell-maps.js from official David Rumsey LUNA records.
+- The South America item uses the official David Rumsey eight-sheet composite record. Its popup also links to all eight individual sheet records.
+- Several Stairwell works are panoramas, celestial charts, comparative diagrams, or pictorial maps rather than conventional geographic maps. They are displayed accurately as high-resolution images in popups instead of being given fabricated geographic warping.
+
+STORYMAPS
+
+- StoryMaps have their own “See story…” dropdown and purple pins.
+- Current StoryMaps:
+  - A Disappearing Border — Hong Kong
+  - The European Fronts — Europe
+- Clicking a purple pin opens title/date/creator/summary information and a clickable link to the full ArcGIS StoryMap.
+- Story pins use a different color and label treatment from historical and Stairwell pins.
+
+METADATA AND POPUP BEHAVIOR
+
+- createDetailsCard() in index.html builds the shared popup layout.
+- showDetailsPopup() is used by main historical maps, Stairwell maps, and StoryMaps.
+- Clicking a map in a dropdown and clicking its pin are intended to behave consistently.
+- The high-resolution preview image is linked separately from the catalog-record link.
+- David Rumsey descriptions and records came from the official LUNA catalog/API, not from the Google Earth KML descriptions for Stairwell entries.
+
+IMPORTANT FILES
+
+- index.html
+  Main application, styling, controls, map initialization, pins, overlays, popups, and interaction logic.
+- rumsey-maps.js
+  203-map KMZ-derived catalog with map centers, overlay tile placements, descriptions, and selected official metadata enrichments.
+- stairwell-maps.js
+  Official metadata and IIIF URLs for the 10 Stairwell maps.
+- rumsey-previews/
+  Locally cached georeferenced overlay tiles used by the 203-map catalog.
+- import_rumsey_previews.py
+  Reads KML/KMZ overlay structures and downloads usable local preview tiles.
+- import_stairwell_metadata.py
+  Downloads official Stairwell catalog metadata from the David Rumsey LUNA API.
+- InteractiveGlobe.html
+  Earlier/alternate page still present; current work and testing are centered on index.html.
+- rumsey_collection.kmz
+  Original user-supplied collection was located at /Users/jessiekong/Desktop/rumsey_collection.kmz. It may not be inside the repository.
+
+CURRENT GIT STATE
+
+- Branch: jessie
+- index.html is modified.
+- InteractiveGlobe.html, import_rumsey_previews.py, import_stairwell_metadata.py, rumsey-maps.js, rumsey-previews/, and stairwell-maps.js are currently untracked.
+- conversation_handoff.txt is the handoff file created from this conversation.
+- No commit was created during this conversation.
+- Do not discard the untracked generated data or preview directory; they are part of the current working application.
+
+VALIDATION ALREADY PERFORMED
+
+- index.html parses as HTML.
+- The module script parses successfully in JavaScriptCore; the validation run stops only when its test stub reaches the MapLibre constructor, which confirms syntax parsing completed.
+- git diff --check passed after the latest edits.
+- All 10 Stairwell metadata records are present.
+- A generated Stairwell thumbnail URL was tested and returned a valid 240-pixel JPEG.
+- The OpenFreeMap Noto Sans glyph endpoint was tested successfully.
+- rumsey-maps.js currently reports 203 of 203 entries with descriptions.
+
+KNOWN LIMITATIONS / NEXT CHECKS
+
+- Start the local server and visually reload http://localhost:8000/index.html. The server was not listening on port 8000 when this handoff was written.
+- Visually check the custom Stairwell gallery at narrow browser widths and confirm it does not cover controls unexpectedly.
+- Test gallery-thumbnail selection, teal-pin selection, popup image links, and outside-click closing.
+- Test several main-list maps to confirm both the overlay and descriptive popup appear together.
+- Five of the 203 imported main maps currently have no local overlay tiles; they can still navigate and show their descriptions.
+- Four main entries lack a catalog date, and three lack a David Rumsey source URL, although every entry has a description.
+- Many main catalog entries do not yet include full creator/fullMetadata fields. The user’s latest request was specifically to include the David Rumsey descriptions, which is complete. A future task could enrich all 203 entries with full official LUNA metadata.
+- Public third-party raster services can rate-limit or deny requests. If OSM again shows 403, keep the OSM option but consider an OSM-compatible provider with an appropriate usage policy.
+- Before publishing, review licensing/attribution for Esri imagery, OSM/OpenTopoMap, terrain data, and David Rumsey images.
+
+UPDATE — OCTOBER 9, 2026: GEOREFERENCER AND PERFORMANCE
+
+- index.html now supports official David Rumsey Georeferencer XYZ exports through rumsey-georeferencer.js. If an entry has georeferencerTiles, the app prefers that single tiled raster source over the older Google Earth/KML-derived local fallback.
+- The current Georeferencer requires a signed-in user to generate each map's GIS export URL and access key. Those per-map export URLs were not available in this workspace, so rumsey-georeferencer.js is currently an empty configuration template. Populate it with URLs copied from “Use in GIS apps” on each official Georeferencer map page.
+- Main-map credits now link to the David Rumsey record or official Georeferencer rather than to the old Google Earth KML.
+- The local fallback no longer creates every image layer at once. It loads only image rectangles intersecting the current viewport and refreshes them after the map finishes moving. This addresses the main rendering bottleneck: some maps previously created 50–63 independent raster/image layers at once.
+- The local cache contains 2,063 preview images totaling about 129 MB. Individual heavy selections were about 1–7 MB, but the number of simultaneous GPU textures/layers was the bigger problem.
+- The app now reports historical-overlay download failures in the overlay credit and explicitly reports WebGL context loss as a graphics-processor failure. A weak computer can make the heavy maps slow, but a map that never appears is generally a source/loading failure rather than ordinary slowness.
+
+USER PREFERENCES OBSERVED
+
+- The user prefers direct edits and minimal command-line work.
+- Keep the interface visually simple and nontechnical.
+- Default to satellite plus 3D terrain.
+- Retain OSM as an available basemap.
+- Keep the top three featured historical maps at the top of the main list.
+- Keep map categories visually distinct: red main-map pins, teal larger Stairwell pins, purple StoryMap pins, and the separate “We are Here” marker.
+- Use Helvetica throughout the interface and popups.
+- Use slower, smoother fly animations.
+- Prefer official David Rumsey catalog descriptions, metadata, IIIF images, and official georeferencing sources.
