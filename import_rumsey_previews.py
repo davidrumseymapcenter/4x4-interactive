@@ -13,6 +13,8 @@ import ssl
 import sys
 import xml.etree.ElementTree as ET
 
+from PIL import Image
+
 ROOT = Path(__file__).resolve().parent
 CATALOG = ROOT / "rumsey-maps.js"
 ASSETS = ROOT / "rumsey-previews"
@@ -164,9 +166,19 @@ def import_entry(entry):
 
     def download_overlay(index, overlay):
         data, content_type, _ = fetch(overlay["remote"])
-        suffix = ".jpg" if "jpeg" in content_type else ".png"
+        suffix = ".jpg" if "jpeg" in content_type else ".webp"
         relative = Path("rumsey-previews") / f"{entry['id']}-{index + 1}{suffix}"
-        (ROOT / relative).write_bytes(data)
+        if suffix == ".jpg":
+            (ROOT / relative).write_bytes(data)
+        else:
+            with Image.open(BytesIO(data)) as image:
+                image.save(
+                    ROOT / relative,
+                    "WEBP",
+                    lossless=True,
+                    method=6,
+                    exact=True,
+                )
         return index, {
             "url": relative.as_posix(),
             "coordinates": overlay["coordinates"],

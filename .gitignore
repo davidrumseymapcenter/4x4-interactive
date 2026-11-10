@@ -3,3 +3,9 @@
 
 # Ignore the .js file that contains private Mapbox Access Token
 secret.js
+
+# Generated development caches and operating-system metadata
+__pycache__/
+*.py[cod]
+.DS_Store
+.rumsey-source-cache.json

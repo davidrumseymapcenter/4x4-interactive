@@ -159,10 +159,14 @@ KNOWN LIMITATIONS / NEXT CHECKS
 - Public third-party raster services can rate-limit or deny requests. If OSM again shows 403, keep the OSM option but consider an OSM-compatible provider with an appropriate usage policy.
 - Before publishing, review licensing/attribution for Esri imagery, OSM/OpenTopoMap, terrain data, and David Rumsey images.
 
-UPDATE — OCTOBER 9, 2026: GEOREFERENCER AND PERFORMANCE
+UPDATE — OCTOBER 16, 2026: GEOREFERENCER, RESOLUTION, AND CONTROLS
 
 - index.html now supports official David Rumsey Georeferencer XYZ exports through rumsey-georeferencer.js. If an entry has georeferencerTiles, the app prefers that single tiled raster source over the older Google Earth/KML-derived local fallback.
-- The current Georeferencer requires a signed-in user to generate each map's GIS export URL and access key. Those per-map export URLs were not available in this workspace, so rumsey-georeferencer.js is currently an empty configuration template. Populate it with URLs copied from “Use in GIS apps” on each official Georeferencer map page.
+- rumsey-georeferencer.js now contains a verified public Allmaps/IIIF tile source for Rome Historical Lanciani. It renders from the original Rumsey scan at the appropriate resolution for each zoom. Other maps retain their georeferenced KML fallback until a matching public Georeferencer/Allmaps annotation can be verified.
+- resolve_rumsey_sources.py can match imported entries to official LUNA records and check for public Allmaps annotations. It deliberately leaves ambiguous matches for review instead of connecting a map to the wrong catalog record.
+- Local detail overlays remain active at every zoom level instead of switching back to a blurrier preview level. The Chinatown georeferenced image request was increased from 2,998 to 5,996 pixels wide.
+- Every vertical mouse-wheel or trackpad scroll zooms. Command + left-click dragging vertically changes tilt. A held middle mouse button controls bearing and tilt. Only horizontal two-finger trackpad swipes rotate the compass bearing. Pointer events are captured before MapLibre's handlers so the modified drags are not mistaken for map panning.
+- stanford-embed-snippet.html contains the responsive iframe for placing the separately hosted map inside jkong.people.stanford.edu after Stanford Web Services approves the external embeddable source.
 - Main-map credits now link to the David Rumsey record or official Georeferencer rather than to the old Google Earth KML.
 - The local fallback no longer creates every image layer at once. It loads only image rectangles intersecting the current viewport and refreshes them after the map finishes moving. This addresses the main rendering bottleneck: some maps previously created 50–63 independent raster/image layers at once.
 - The local cache contains 2,063 preview images totaling about 129 MB. Individual heavy selections were about 1–7 MB, but the number of simultaneous GPU textures/layers was the bigger problem.

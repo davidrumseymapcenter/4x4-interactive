@@ -792,9 +792,9 @@
         }
       });
     </script>
-    <script src="./rumsey-maps.js?v=20261014-3"></script>
+    <script src="./rumsey-maps.js?v=20261021-1"></script>
     <script src="./rumsey-preview-index.js?v=20261014-3"></script>
-    <script src="./rumsey-georeferencer.js"></script>
+    <script src="./rumsey-georeferencer.js?v=20261016-1"></script>
     <script src="./stairwell-maps.js"></script>
     <script type="module">
       let maplibregl;
@@ -942,67 +942,93 @@
         zoomSlider.value = map.getZoom().toFixed(1);
       });
 
-      // Google Earth-style orientation gestures. Trackpads emit small pixel
-      // wheel deltas for two-finger swipes; mouse wheels emit larger steps.
+      // Leave wheel and trackpad gestures to MapLibre's standard zoom control.
+      // Bearing is changed with the compass or the middle mouse button.
       const mapCanvasContainer = map.getCanvasContainer();
-      mapCanvasContainer.addEventListener(
-        "wheel",
-        (event) => {
-          const looksLikeTrackpad =
-            !event.ctrlKey &&
-            event.deltaMode === WheelEvent.DOM_DELTA_PIXEL &&
-            (Math.abs(event.deltaX) > 0 || Math.abs(event.deltaY) < 50);
-          if (!looksLikeTrackpad) return;
 
+      // Capture orientation gestures on pointerdown, before MapLibre's own
+      // pan/rotate handlers claim the drag. Command-drag changes tilt; holding
+      // the middle mouse button provides full bearing-and-tilt control.
+      let orientationDragMode = null;
+      let orientationPointerId = null;
+      let orientationDragX = 0;
+      let orientationDragY = 0;
+      let commandKeyHeld = false;
+      window.addEventListener("keydown", (event) => {
+        if (event.key === "Meta" || event.key === "Control") {
+          commandKeyHeld = true;
+        }
+      });
+      window.addEventListener("keyup", (event) => {
+        if (event.key === "Meta" || event.key === "Control") {
+          commandKeyHeld = false;
+        }
+      });
+      window.addEventListener("blur", () => {
+        commandKeyHeld = false;
+      });
+      mapCanvasContainer.addEventListener(
+        "pointerdown",
+        (event) => {
+          const commandTilt =
+            event.button === 0 &&
+            (event.metaKey || event.ctrlKey || commandKeyHeld);
+          const middleMouse = event.button === 1;
+          if (!commandTilt && !middleMouse) return;
           event.preventDefault();
           event.stopImmediatePropagation();
+          orientationDragMode = commandTilt ? "tilt" : "orient";
+          orientationPointerId = event.pointerId;
+          orientationDragX = event.clientX;
+          orientationDragY = event.clientY;
+          mapCanvasContainer.setPointerCapture?.(event.pointerId);
+          map.dragPan.disable();
+          map.dragRotate.disable();
           spinEnabled = false;
           updateRotationButton();
-          map.jumpTo({
-            bearing: map.getBearing() + event.deltaX * 0.25,
-            pitch: Math.min(
-              75,
-              Math.max(0, map.getPitch() + event.deltaY * 0.15),
-            ),
-          });
-        },
-        { capture: true, passive: false },
-      );
-
-      let middleMouseDragging = false;
-      let middleMouseX = 0;
-      let middleMouseY = 0;
-      mapCanvasContainer.addEventListener(
-        "mousedown",
-        (event) => {
-          if (event.button !== 1) return;
-          event.preventDefault();
-          event.stopImmediatePropagation();
-          middleMouseDragging = true;
-          middleMouseX = event.clientX;
-          middleMouseY = event.clientY;
-          spinEnabled = false;
-          updateRotationButton();
-          map.getCanvas().style.cursor = "grabbing";
+          map.getCanvas().style.cursor = commandTilt ? "ns-resize" : "grabbing";
         },
         true,
       );
-      window.addEventListener("mousemove", (event) => {
-        if (!middleMouseDragging) return;
-        const dx = event.clientX - middleMouseX;
-        const dy = event.clientY - middleMouseY;
-        middleMouseX = event.clientX;
-        middleMouseY = event.clientY;
-        map.jumpTo({
-          bearing: map.getBearing() + dx * 0.35,
-          pitch: Math.min(75, Math.max(0, map.getPitch() - dy * 0.25)),
-        });
-      });
-      window.addEventListener("mouseup", (event) => {
-        if (event.button !== 1 || !middleMouseDragging) return;
-        middleMouseDragging = false;
+      window.addEventListener(
+        "pointermove",
+        (event) => {
+          if (
+            !orientationDragMode ||
+            event.pointerId !== orientationPointerId
+          ) return;
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          const dx = event.clientX - orientationDragX;
+          const dy = event.clientY - orientationDragY;
+          orientationDragX = event.clientX;
+          orientationDragY = event.clientY;
+          const nextView = {
+            pitch: Math.min(75, Math.max(0, map.getPitch() + dy * 0.35)),
+          };
+          if (orientationDragMode === "orient") {
+            nextView.bearing = map.getBearing() + dx * 0.35;
+          }
+          map.jumpTo(nextView);
+        },
+        true,
+      );
+      function finishOrientationDrag(event) {
+        if (
+          !orientationDragMode ||
+          event.pointerId !== orientationPointerId
+        ) return;
+        if (mapCanvasContainer.hasPointerCapture?.(event.pointerId)) {
+          mapCanvasContainer.releasePointerCapture(event.pointerId);
+        }
+        orientationDragMode = null;
+        orientationPointerId = null;
+        map.dragPan.enable();
+        map.dragRotate.enable();
         map.getCanvas().style.cursor = "grab";
-      });
+      }
+      window.addEventListener("pointerup", finishOrientationDrag, true);
+      window.addEventListener("pointercancel", finishOrientationDrag, true);
       mapCanvasContainer.addEventListener("auxclick", (event) => {
         if (event.button === 1) event.preventDefault();
       });
@@ -1270,6 +1296,30 @@
           subject: "Historical maps of the European fronts",
           summary: "Explores how paper maps of the European fronts were given a second life through digitization and interactive mapping.",
           url: "https://storymaps.arcgis.com/stories/e37b05044faf4d9cb040be88dab8a7fa",
+        },
+        {
+          id: "story-transit-cartography",
+          title: "You Are Here: Transit Cartography and Spatial Identity",
+          location: "New York City",
+          center: [-74.006, 40.7128],
+          zoom: 10.5,
+          date: "2026",
+          creator: "ArcGIS StoryMaps — kilander_UWM",
+          subject: "Transit maps and urban identity",
+          summary: "Explores how regional and global transit maps serve as navigation tools, cultural symbols, and expressions of cities’ and nations’ identities. Created for the March 25–August 21, 2026 exhibition at the David Rumsey Map Center.",
+          url: "https://storymaps.arcgis.com/stories/c80f500487834f419489de24248913b3",
+        },
+        {
+          id: "story-spheres-of-influence",
+          title: "Spheres of Influence: Projecting Power & Fear onto the Globe",
+          location: "Null Island",
+          center: [0, 0],
+          zoom: 4,
+          date: "2025",
+          creator: "ArcGIS StoryMaps — turnerchamp_Stanford",
+          subject: "Global-view maps, geopolitics, and perspective",
+          summary: "Examines global-view maps and the ways mapmakers use perspective, tilt, and rotation to shape perceptions of geopolitical power and conflict. Created for the April 2–September 19, 2025 exhibition at the David Rumsey Map Center.",
+          url: "https://storymaps.arcgis.com/stories/83a42ebc28b44fe7b355532da798b938",
         },
       ];
       const detailsPopup = new maplibregl.Popup({
@@ -1863,7 +1913,7 @@
         // Add the georeferenced 1929 map of San Francisco Chinatown.
         map.addSource("SFChinatown1929", {
           type: "image",
-          url: "https://stacks.stanford.edu/image/iiif/pt740jp0404%2FSFChinatown_wgs84/full/2998,/0/default.png",
+          url: "https://stacks.stanford.edu/image/iiif/pt740jp0404%2FSFChinatown_wgs84/full/5996,/0/default.png",
           coordinates: [
             [-122.41033213925, 37.7982284545],
             [-122.40231069045, 37.7982284545],
@@ -2193,6 +2243,14 @@
           stairwellPopup.remove();
         });
         map.on("click", "stairwell-map-pins", (event) => {
+          // A story and a stairwell map may share a location (Null Island).
+          // Let the smaller purple story pin handle clicks in its center; the
+          // surrounding edge of the larger teal pin remains clickable.
+          if (
+            map.queryRenderedFeatures(event.point, {
+              layers: ["story-location-pins"],
+            }).length
+          ) return;
           const feature = event.features?.[0];
           const stairwellId = feature?.properties?.stairwellId;
           if (!stairwellId) return;
@@ -2431,6 +2489,35 @@
 
       function renderCatalogOverlays(entry, initialRender = false) {
         if (activeCatalogEntry?.id !== entry.id) return;
+
+        if (
+          !entry.georeferencerTiles &&
+          entry.detailManifest &&
+          !entry.detailOverlays &&
+          !entry.detailManifestLoading
+        ) {
+          entry.detailManifestLoading = fetch(entry.detailManifest)
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error(`Detail manifest returned ${response.status}`);
+              }
+              return response.json();
+            })
+            .then((manifest) => {
+              entry.detailOverlays = Array.isArray(manifest.overlays)
+                ? manifest.overlays
+                : [];
+              entry.detailResolutionLevel = manifest.resolutionLevel;
+              if (activeCatalogEntry?.id === entry.id) {
+                // Start with nearby tiles so a large historical map appears
+                // promptly; viewport updates add the rest as the user moves.
+                renderCatalogOverlays(entry, true);
+              }
+            })
+            .catch((error) => {
+              console.warn(`Could not load details for ${entry.name}`, error);
+            });
+        }
         removeCatalogOverlayLayers();
         activeHistoricalLayers = [];
 
@@ -2440,16 +2527,17 @@
             tiles: [entry.georeferencerTiles],
             tileSize: 256,
             minzoom: entry.georeferencerMinZoom ?? 0,
-            maxzoom: entry.georeferencerMaxZoom ?? 20,
-            attribution: "David Rumsey Map Collection / Georeferencer",
+            maxzoom: entry.georeferencerMaxZoom ?? 22,
+            attribution: "David Rumsey Map Collection IIIF / Allmaps",
           });
           return;
         }
 
+        // Keep the sharpest locally available georeference active at every
+        // zoom. MapLibre scales it down cleanly when the globe is farther away.
         const useDetailLevel =
           Array.isArray(entry.detailOverlays) &&
-          entry.detailOverlays.length > 0 &&
-          map.getZoom() >= (entry.detailMinZoom ?? 8);
+          entry.detailOverlays.length > 0;
         const overlays = useDetailLevel
           ? entry.detailOverlays
           : Array.isArray(entry.overlays)
@@ -2612,7 +2700,7 @@
           officialRecordUrl.replaceAll('"', "&quot;") +
           '" target="_blank" rel="noopener">' +
           (hasOfficialTiles
-            ? "Official David Rumsey Georeferencer tiles"
+            ? "David Rumsey IIIF tiles via Allmaps"
             : "David Rumsey record · cached georeference fallback") +
           "</a>";
         spinEnabled = false;

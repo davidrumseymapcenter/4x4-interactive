@@ -1,15 +1,26 @@
-# 4x4-interactive
+# 4x4 Interactive
 
-## Introduction
+This is a spinning globe display with historical-map overlays, built for the interactive 4x4 presentation screen in the Stanford David Rumsey Map Center. You can pan, zoom, and compare historical maps with modern basemaps. The historical maps come from the [David Rumsey Map Collection](https://www.davidrumsey.com).
 
-This is a spinning globe HTML display with historic maps overlay, build for the interactive 4x4 presentation screen in the Stanford David Rumsey Map Center. You can open this HTML and pan, zoom, and interact with the historical maps overlaid on modern base map. All historic maps used here are all from the [David Rumsey Map Collection](https://www.davidrumsey.com).
+## Project structure
+
+- `index.html` — application interface and map behavior.
+- `rumsey-maps.js` — generated catalog, coordinates, metadata, and overlay paths.
+- `rumsey-previews/` — compact lossless WebP/JPEG KML fallback overlays.
+- `rumsey-mosaics/` — larger lossless WebP overlay chunks for detailed maps.
+- `rumsey-georeferencer.js` — verified IIIF-backed Allmaps tile overrides.
+- `rumsey-georeferencer.js` — verified high-resolution georeferencer sources.
+- `stairwell-maps.js` — Stairwell Map records and metadata.
+- `*_rumsey_*.py` and `build_rumsey_mosaics.py` — maintenance tools; they are not loaded by the website.
+
+Run the site from this directory with a local web server, then open `http://localhost:8000/index.html`. Do not open `index.html` directly with a `file://` URL because browser security rules can block map assets.
 
 ## Documentation
 
-To build this webmap, here are several general steps involved:
+The application uses MapLibre for its globe and modern basemaps, with georeferenced historical-map overlays and custom navigation controls. See the [project documentation](DRMCwebmapDoc/MapboxInteractiveGlobeProjectDocumentation.md) for more background.
 
-- Building a spinning globe base map with Mapbox
-- Adding Georeferenced historic map overlays
-- Customizing the interactive features on spinning globe
-
-For a more detailed description of how this web map came to be, check out [this documentation](DRMCwebmapDoc/MapboxInteractiveGlobeProjectDocumentation.md). If you'd like to contribute to the development of this webmap, you will need your own [Mapbox Access Toke](https://docs.mapbox.com/help/dive-deeper/access-tokens/).
+Historical overlays prefer public Allmaps XYZ tiles generated from the official
+David Rumsey IIIF master scan. These load source regions at the appropriate
+resolution as the viewer zooms. A local WebP georeference remains available for
+catalog records that have no published Allmaps annotation; a plain IIIF image
+cannot be positioned accurately without that annotation.

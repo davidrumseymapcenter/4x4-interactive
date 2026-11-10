@@ -68,8 +68,9 @@ def build_entry(entry, detail=False):
 
     OUTPUT.mkdir(exist_ok=True)
     output_prefix = f"{entry['id']}-detail" if detail else entry["id"]
-    for old_file in OUTPUT.glob(f"{output_prefix}-*.png"):
-        old_file.unlink()
+    for pattern in (f"{output_prefix}-*.png", f"{output_prefix}-*.webp"):
+        for old_file in OUTPUT.glob(pattern):
+            old_file.unlink()
 
     mosaic_overlays = []
     chunk_number = 0
@@ -99,8 +100,14 @@ def build_entry(entry, detail=False):
                     mosaic.alpha_composite(source, (x, y))
 
             chunk_number += 1
-            relative = Path("rumsey-mosaics") / f"{output_prefix}-{chunk_number}.png"
-            mosaic.save(ROOT / relative, optimize=True)
+            relative = Path("rumsey-mosaics") / f"{output_prefix}-{chunk_number}.webp"
+            mosaic.save(
+                ROOT / relative,
+                "WEBP",
+                lossless=True,
+                method=6,
+                exact=True,
+            )
             west = longitudes[first_column]
             east = longitudes[first_column + columns]
             north = latitudes[first_row]

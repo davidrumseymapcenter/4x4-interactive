@@ -2,6 +2,7 @@
 """Download a denser georeferenced tile level for selected Rumsey maps."""
 
 from concurrent.futures import ThreadPoolExecutor
+from io import BytesIO
 from pathlib import Path
 from urllib.parse import urljoin
 import argparse
@@ -9,6 +10,8 @@ import json
 import re
 import shutil
 import tempfile
+
+from PIL import Image
 
 from import_rumsey_previews import fetch, parse_overlays
 
@@ -46,6 +49,13 @@ def crawl_tile_tree(start_url, max_tiles):
         batch = [url for url in frontier if url not in visited]
         if not batch:
             break
+        existing_usable = [
+            (order, items)
+            for order, items in overlays_by_order.items()
+            if 1 <= len(items) <= max_tiles
+        ]
+        if len(batch) > max_tiles and existing_usable:
+            break
         visited.update(batch)
 
         def read_document(url):
@@ -72,14 +82,29 @@ def crawl_tile_tree(start_url, max_tiles):
         )
         print(f"  depth {depth}: {len(batch)} documents; levels {counts}", flush=True)
 
+        # Once a complete level is larger than the requested budget, every
+        # descendant level will be larger still. Stop before crawling a much
+        # larger branch merely to reject it.
+        level_sizes = sorted(
+            (order, len(items)) for order, items in overlays_by_order.items()
+        )
+        if (
+            level_sizes
+            and level_sizes[-1][1] > max_tiles
+            and any(1 <= size <= max_tiles for _, size in level_sizes[:-1])
+        ):
+            break
+
     usable_levels = [
         (order, list(items.values()))
         for order, items in overlays_by_order.items()
-        if 4 <= len(items) <= max_tiles
+        if 1 <= len(items) <= max_tiles
     ]
     if not usable_levels:
         raise RuntimeError("No complete high-resolution level was found")
-    return max(usable_levels, key=lambda item: item[0])
+    # Edge slivers can carry a higher drawOrder than the complete map level.
+    # Prefer the densest usable level, then use drawOrder as the tie-breaker.
+    return max(usable_levels, key=lambda item: (len(item[1]), item[0]))
 
 
 def upgrade_entry(entry, max_tiles, detail):
@@ -92,18 +117,41 @@ def upgrade_entry(entry, max_tiles, detail):
 
         def download(item):
             index, overlay = item
-            data, content_type, _ = fetch(overlay["remote"])
-            suffix = ".jpg" if "jpeg" in content_type else ".png"
+            try:
+                data, content_type, _ = fetch(overlay["remote"])
+            except Exception as error:
+                # Superoverlays commonly include empty edge cells whose image
+                # URL returns 404. They are transparent space, not a reason to
+                # discard the complete high-resolution level.
+                print(
+                    f"  skipping empty tile {index + 1}: {error}",
+                    flush=True,
+                )
+                return index, None
+            suffix = ".jpg" if "jpeg" in content_type else ".webp"
             level_label = f"-detail-l{int(order)}" if detail else ""
             filename = f"{entry['id']}{level_label}-{index + 1}{suffix}"
-            (temporary / filename).write_bytes(data)
+            if suffix == ".jpg":
+                (temporary / filename).write_bytes(data)
+            else:
+                with Image.open(BytesIO(data)) as image:
+                    image.save(
+                        temporary / filename,
+                        "WEBP",
+                        lossless=True,
+                        method=6,
+                        exact=True,
+                    )
             return index, {
                 "url": f"rumsey-previews/{filename}",
                 "coordinates": overlay["coordinates"],
             }
 
         with ThreadPoolExecutor(max_workers=WORKERS) as pool:
-            downloaded = list(pool.map(download, enumerate(overlays)))
+            attempted = list(pool.map(download, enumerate(overlays)))
+        downloaded = [item for item in attempted if item[1] is not None]
+        if not downloaded:
+            raise RuntimeError("The selected level contained no downloadable tiles")
 
         if not detail:
             old_files = list((ROOT / "rumsey-previews").glob(f"{entry['id']}-*"))

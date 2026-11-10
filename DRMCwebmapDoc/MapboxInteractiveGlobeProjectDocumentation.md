@@ -67,15 +67,15 @@ Here is a slim-down structure of the HTML script which renders the webpage:
 ## Overlay Historic map onto the globe
 1. Find the map on David Rumsey Map Collection Website or Stanford's Search Work
 	- Locate the IIIF Manifest of the map 
-	![Screenshot1.png](Screenshot1.png)
+	![Screenshot1.webp](Screenshot1.webp)
 	
 2. Georeference this map with Allmaps with IIIF manifest 
 	- Enter IIIF manifest on [Allmaps](https://editor.allmaps.org/)  to georeference the map
-	![Screenshot2.png](Screenshot2.png)
+	![Screenshot2.webp](Screenshot2.webp)
 	- Click on "Draw Mask" to draw a mask over the region where you want to crop out
-	![Screenshot3.png](Screenshot3.png)
+	![Screenshot3.webp](Screenshot3.webp)
 	- Once you are done adjusting the georeferencing, click results. Copy the URL link for the XYZ map tiles. Now this link hosts the geoferenced map tiles, which completes the georeferencing step!
-	![Screenshot4.png](Screenshot4.png)
+	![Screenshot4.webp](Screenshot4.webp)
 3. Place georeferenced map on the basemap layer by adding it into html 
 ```HTML 
 // Add a raster source to the map.
